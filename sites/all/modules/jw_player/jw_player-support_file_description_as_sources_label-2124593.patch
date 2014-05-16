@@ -1,0 +1,25 @@
+diff --git a/jw_player.module b/jw_player.module
+index 449f3fd..e0b0f75 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -360,6 +360,10 @@ function template_preprocess_jw_player(&$variables) {
+     $variables['config']['playlist'][0]['image'] = file_create_url($variables['image']['uri']);
+     foreach ($variables['sources'] as $key => $source) {
+       $variables['config']['playlist'][0]['sources'][$key]['file'] = file_create_url($source['uri']);
++      if(isset ($source['description'])){
++        $variables['config']['playlist'][0]['sources'][$key]['label'] = $source['description'];
++      }
++      
+       if (isset($source['getid3']) && $source['getid3']['width'] > 0 && $source['getid3']['height'] > 0) {
+         $variables['config']['playlist'][0]['sources'][$key]['width'] = $source['getid3']['width'];
+         $variables['config']['playlist'][0]['sources'][$key]['height'] = $source['getid3']['height'];
+@@ -375,6 +379,9 @@ function template_preprocess_jw_player(&$variables) {
+     $variables['config']['playlist'] = array();
+     foreach ($variables['sources'] as $key => $source) {
+       $variables['config']['playlist'][$key]['file'] = file_create_url($source['uri']);
++      if(isset ($source['description'])){
++        $variables['config']['playlist'][$key]['label'] = $source['description'];
++      }
+     }
+   }
+   

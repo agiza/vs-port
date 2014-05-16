@@ -1,0 +1,22 @@
+diff --git a/jw_player.module b/jw_player.module
+index b632759..795b876 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -452,7 +452,7 @@ function jw_player_process_jw_player(&$variables) {
+   // If inline is not selected, add all relevant JavaScript now.
+   else {
+     // Add library.
+-    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js');
++    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js', array('preprocess' => FALSE));
+     // Attaches JW Player element.
+     drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
+     drupal_add_js(array('jw_player' => array($variables['html_id'] => $variables['config'])), 'setting'); // Player settings
+@@ -479,7 +479,7 @@ function jw_player_process_jw_player(&$variables) {
+ function jw_player_init() {
+   if (variable_get('jw_player_inline_js', FALSE)) {
+     // Add library
+-    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js');
++    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js', array('preprocess' => FALSE));
+ 
+     // Add key if available.
+     if ($key = variable_get('jw_player_key', NULL)) {

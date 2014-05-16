@@ -1,0 +1,16 @@
+diff --git a/jw_player.module b/jw_player.module
+index 34563cd..4c28b49 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -245,6 +245,11 @@ function jw_player_preprocess_jw_player(&$variables) {
+   // Give each instance of the player a unique id.
+   $variables['html_id'] = drupal_html_id('jw_player');
+ 
++  // Create a configuration array which will be passed to JWPlayer's JavaScript.
++  $variables['config'] = array(
++    'file' => $variables['file_url'],
++  );
++
+   // Resolve skin url
+   $skin = !empty($variables['skin']) ? jw_player_skins($variables['skin']) : '';
+   $variables['skin_url'] = !empty($skin) ? file_create_url($skin->uri) : '';

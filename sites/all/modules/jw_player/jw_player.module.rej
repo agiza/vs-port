@@ -1,0 +1,24 @@
+--- jw_player.module
++++ jw_player.module
+@@ -345,6 +345,13 @@
+     // configured to use it.
+     if (!empty($preset)) {
+       $preset_settings = $preset['settings'];
++      if (!empty($preset_settings['responsive'])) {
++        unset($preset_settings['height']);
++        $preset_settings['width'] = $preset_settings['width'] . '%';
++      }
++      else {
++        unset($preset_settings['aspectratio']);
++      }
+     }
+   }
+ 
+@@ -412,6 +419,7 @@
+     'playlist.size',
+     'skin',
+     'stretching',
++    'aspectratio',
+   );
+   foreach ($config_variables as $key) {
+     if (!empty($variables[$key])) {

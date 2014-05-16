@@ -1,0 +1,377 @@
+<?php
+/**
+ * @file
+ * The image importer module main file with all hooks and custom functions.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function image_importer_menu() {
+  $items = array();
+  $items['image_importer/execute'] = array(
+    'title' => 'Import images from FTP folder',
+    'page callback' => 'image_importer_admin_import_folder',
+    'access callback' => 'user_access',
+    'access arguments' => array('use image importer'),
+    'type' => MENU_LOCAL_ACTION | MENU_SUGGESTED_ITEM,
+    'tab_parent' => 'admin/content',
+    'tab_root' => 'admin/content',
+    'weight' => -50,
+  );
+  $items['admin/config/content/image_importer'] = array(
+    'title' => 'Image importer configuration',
+    'description' => 'Allow user to configure the content types and entities that use image import',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('image_importer_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('configure image importer'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 100,
+    'file' => 'image_importer.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function image_importer_permission() {
+  $permissions = array(
+    'use image importer' => array(
+      'title' => t('Use image importer'),
+      'description' => t('Allows users to import images into the specified nodes.'),
+    ),
+    'configure image importer' => array(
+      'title' => t('Configure image importer'),
+      'description' => t('Allows users to change image importer settings form.'),
+    ),
+  );
+  return $permissions;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function image_importer_cron() {
+  $execute_import = variable_get('image_importer_execute_with_cron', FALSE);
+  if ($execute_import) {
+    $is_free = _image_importer_locker();
+    if ($is_free) {
+      try{
+        _image_importer_run_import();
+      }
+      catch(Exception $e){
+        watchdog('image_importer', 'Cron image import failed: @error_message', array('@error_message' => $e->getMessage()), WATCHDOG_ERROR);
+      }
+      lock_release('image_importer_import_folder');
+    }
+  }
+}
+
+/**
+ * Menu local action callback (admin/content).
+ */
+function image_importer_admin_import_folder() {
+  $is_free = _image_importer_locker();
+  $content = array();
+  if ($is_free) {
+    try{
+      $content = _image_importer_run_import();
+    }
+    catch(Exception $e){
+      watchdog('image_importer', 'Image import failed: @error_message', array('@error_message' => $e->getMessage()), WATCHDOG_ERROR);
+      $content[] = array(
+        '#type' => 'markup',
+        '#markup' => '<h3>' . t('Import Folder Failed!') . '</h3><p>' . $e->getMessage() . '</p>',
+      );
+    }
+    lock_release('image_importer_import_folder');
+  }
+  return $content;
+}
+
+/**
+ * Function used to lock import use while it is running.
+ */
+function _image_importer_locker() {
+  if (!lock_acquire('image_importer_import_folder', 2000.0)) {
+    // Wait for another request that is already doing this work.
+    watchdog('image_importer', 'Function scan_folder is executing', array(), WATCHDOG_INFO);
+    lock_wait('image_importer_import_folder');
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Check the module configuration to know the affected fields.
+ */
+function _image_importer_affected_fields() {
+  // Check and retrieve information of affected fields configured
+  // in module settings form.
+  $affected_fields_settings = variable_get('image_importer_affected_fields', array());
+  $affected_fields = array();
+  foreach ($affected_fields_settings as $key => $value) {
+    if ($value) {
+      $affected_fields[$key] = db_select('field_config_instance', 'fci')
+        ->fields('fci', array('field_id', 'field_name', 'entity_type', 'bundle'))
+        ->condition('fci.id', $key, '=')
+        ->condition('fci.deleted', 0, '=')
+        ->execute()->fetchObject();
+    }
+  }
+  return $affected_fields;
+}
+
+/**
+ * Function to check if loaded entity type is correct.
+ */
+function _image_importer_check_fields($entity_type, $entity_bundle, $affected_fields) {
+  foreach ($affected_fields as $af) {
+    if ($af->entity_type == $entity_type && $af->bundle == $entity_bundle) {
+      return $af;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * First call to initialize import function.
+ */
+function _image_importer_run_import() {
+  $folder = DRUPAL_ROOT . variable_get('image_importer_base_directory', '/sites/default/files/');
+  $scan_folder_info = array();
+  $affected_fields = _image_importer_affected_fields();
+  // Check if folder specified in settings for exists.
+  if (is_dir($folder)) {
+    _image_importer_scan_folder($folder, $affected_fields, $scan_folder_info, 0, array());
+    watchdog('image_importer', 'Image import execution finished. See image_import_details log entries for more information.', array(), WATCHDOG_INFO);
+    $scan_folder_info[] = array(
+      '#type' => 'markup',
+      '#markup' => '<h3>' . t('Import Folder Finished!') . '</h3>',
+    );
+  }
+  else {
+    watchdog('image_importer', 'Unable to access to the specified folder: @folder_path', array('@folder_path' => $folder), WATCHDOG_INFO);
+    $scan_folder_info[] = array(
+      '#type' => 'markup',
+      '#markup' => '<h3>' . t('Unable to access to the specified folder: @folder_path', array('@folder_path' => $folder)) . '</h3>',
+    );
+  }
+  return $scan_folder_info;
+}
+
+/**
+ * Import the images to each node.
+ * 
+ * @param string $path
+ *   The base path of folder to analyse.
+ * @param array $affected_fields
+ *   The affected fields information, these are configured in module
+ *   settings form. We can retrieve with the function:
+ *   _image_importer_affected_fields()
+ * @param array $function_resp
+ *   Array to store import results. Passed by reference.
+ * @param int $level
+ *   The recursion level (subpath)
+ * @param array $nids
+ *   The affected node ids. Base and translations.
+ */
+function _image_importer_scan_folder($path, $affected_fields = array(), &$function_resp = array(), $level = 0, $nids = array()) {
+  $ftp_folder = scandir($path);
+  $node_images = array();
+  foreach ($ftp_folder as $folder_item) {
+    if ($folder_item != "." && $folder_item != ".." && $folder_item != 'Thumbs.db') {
+      $new_path = $path . $folder_item;
+      // Check if the new item is a file or directory.
+      if (is_dir($new_path)) {
+        $new_path .= "/";
+        // Import method that import images in the indicated field/s
+        // of the node with the ids of folder scan path.
+        $nid = $folder_item;
+        $node_type = db_select('node', 'n')
+          ->fields('n', array('type'))
+          ->condition('n.nid', $nid, '=')
+          ->execute()->fetchField();
+        // Check if folder has valid node id.
+        if ($node_type) {
+          // Check if loaded node check the affected field properties.
+          $is_valid = _image_importer_check_fields('node', $node_type, $affected_fields);
+          if ($is_valid) {
+            $field_name = $is_valid->field_name;
+            $nids = array();
+            // Support for node translations with i18n module.
+            if (module_exists('i18n')) {
+              try {
+                $node_translations = db_select('node', 'n')
+                  ->fields('n', array('nid'))
+                  ->condition('n.tnid', $nid, '=')
+                  ->execute();
+                while ($row = $node_translations->fetchAssoc()) {
+                  $nids[] = $row['nid'];
+                }
+              }
+              catch(Exception $e) {
+                watchdog('image_import_details', 'Failed retrieving i18n translations with exception @exception!', array('@exception' => $e->getMessage()), WATCHDOG_ERROR);
+              }
+            }
+            $node_id_text = t('Node id: @nid', array('@nid' => $nid));
+            $field_name_text = t('Field name: @fieldname', array('@fieldname' => $field_name));
+            $not_found_text = t('No node found with id: @nid', array('@nid' => $nid));
+            $function_resp[] = array(
+              '#type' => 'markup',
+              '#markup' => '<h3>' . t('Node to import') . '</h3><ul><li>' . $node_id_text . '</li><li>' . $field_name_text . '</li></ul>',
+            );
+            $nids = (count($nids)) ? $nids : array($nid);
+            _image_importer_scan_folder($new_path, array($is_valid), $function_resp, $level + 1, $nids);
+          }
+          else {
+            $function_resp[] = array(
+              '#type' => 'markup',
+              '#markup' => '<h3>' . t('Invalid node field') . '</h3><p' . $node_id_text . '</p>',
+            );
+          }
+        }
+        else {
+          $function_resp[] = array(
+            '#type' => 'markup',
+            '#markup' => '<h3>' . t('Node not found') . '</h3><p>' . $not_found_text . '</p>',
+          );
+        }
+      }
+      else {
+        // Node image.
+        $node_images[] = array('path' => $new_path, 'item' => $folder_item);
+      }
+    }
+  }
+  // Check if path contains images to import.
+  if (count($node_images) != 0) {
+    // Node image creation.
+    if (count($nids) != 0) {
+      $nids_string = '';
+      foreach ($nids as $key => $val) {
+        if ($key != 0) {
+          $nids_string .= ', ';
+        }
+        $nids_string .= $val;
+      }
+      $node_id_text = t('Node/s id/s (base and translations): @nid_str', array('@nid_str' => $nids_string));
+      try{
+        _image_importer_add_node_images($node_images, $nids, $affected_fields);
+        $node_images_items_list = '';
+        foreach ($node_images as $ni) {
+          $node_images_items_list .= '<li>' . $ni['item'] . '</li>';
+        }
+        $node_images_list = '<ul>' . $node_images_items_list . '</ul>';
+        $function_resp[] = array(
+          '#type' => 'markup',
+          '#markup' => '<h3>' . t('Imported images') . '</h3><p>' . $node_id_text . '<br/>Images: ' . $node_images_list . '</p>',
+        );
+      }
+      catch(Exception $e) {
+        watchdog('image_import_details', 'Failed inserting image (@path) with exception @exception!', array('@path' => $new_path, '@exception' => $e->getMessage()), WATCHDOG_ERROR);
+        $function_resp[] = array(
+          '#type' => 'markup',
+          '#markup' => '<h3>' . t('Failed importing images') . '</h3><p>' . $node_id_text . '<br/>Images: ' . $node_images_list . '</p><p>Error message: ' . $e->getMessage() . '</p>',
+        );
+      }
+    }
+    else {
+      // Trying to insert image without node id.
+      watchdog('image_import_details', 'Failed inserting image (@path). Error with node id = 0', array('@path' => $new_path), WATCHDOG_ERROR);
+    }
+  }
+}
+
+/**
+ * Add folder images to node function.
+ */
+function _image_importer_add_node_images($node_images, $nids = array(), $affected_fields = array()) {
+  // Retrieve the node and its translations.
+  $iteration_counter = 1;
+  foreach ($nids as $nid) {
+    $node_item = node_load($nid);
+    if ($node_item != NULL) {
+      $field_info = reset($affected_fields);
+      if ($field_info) {
+        $entity_type = $field_info->entity_type;
+        $field_name = $field_info->field_name;
+        $entity = $node_item;
+        $langcode = field_language($entity_type, $entity, $field_name);
+        dpm($entity);
+        // Check if current gallery have images and get or construct it.
+        $field_image_array = $node_item->$field_name;
+        $field_image_array_lang = $field_image_array[$langcode];
+        $gallery_have_images = isset($field_image_array) && isset($field_image_array_lang);
+        $gallery_image_array = ($gallery_have_images) ? $field_image_array_lang : array();
+        // Add all the images included in the node_images array to the system.
+        foreach ($node_images as $image_info) {
+          $path = $image_info['path'];
+          $item_name = $image_info['item'];
+          // Create managed File object and associate with Image field.
+          $number = '';
+          if (count($gallery_image_array) < 9) {
+            $number = '00' . (count($gallery_image_array) + 1);
+          }
+          elseif (count($gallery_image_array) >= 9 && count($gallery_image_array) < 99) {
+            $number = '0' . (count($gallery_image_array) + 1);
+          }
+          elseif (count($gallery_image_array) >= 99) {
+            $number = (count($gallery_image_array) + 1);
+          }
+          $image_title = $node_item->title . " " . $number;
+          $file = (object) array(
+            'uid' => 1,
+            'uri' => $path,
+            'filename' => str_replace(" ", "_", $item_name),
+            'filemime' => file_get_mimetype($path),
+            'status' => 1,
+            'title' => $image_title,
+          );
+          // Retrieve the field uri from field instance info.
+          $field_array = field_read_field($field_name);
+          $instance_array = field_read_instance($field_info->entity_type, $field_info->field_name, $field_info->bundle);
+          $token_data = array();
+          $field_uri = file_field_widget_uri($field_array, $instance_array, $token_data);
+          // We save the file to the root of the files directory.
+          $file = (count($nids) == $iteration_counter) ? file_move($file, $field_uri) : file_copy($file, $field_uri);
+          $file_ext = substr($path, strrpos($path, '.'));
+          $file->filename = str_replace(" ", "_", $node_item->title) . '_' . $file->fid . $file_ext;
+          $file = file_save($file);
+          if ($file) {
+            watchdog('image_import_details', 'Inserting image (@path) to node with id: @node_id', array('@path' => $path, '@node_id' => $node_item->nid), WATCHDOG_INFO);
+          }
+          if (module_exists('media') && $file) {
+            // WE NEED TO STORE THE TITLE INFO IN DB!
+            // 'field_revision_field_file_image_title_text' DB TABLE.
+            $media_title_field = array(
+              'entity_type' => 'file',
+              'bundle' => 'image',
+              'deleted' => 0,
+              'entity_id' => $file->fid,
+              'revision_id' => $file->fid,
+              'language' => $langcode,
+              'delta' => 0,
+              'field_file_image_title_text_value' => $image_title,
+              'field_file_image_title_text_format' => NULL,
+            );
+            // Save the data and revision title field for file entity image.
+            db_insert('field_data_field_file_image_title_text')->fields($media_title_field)->execute();
+            db_insert('field_revision_field_file_image_title_text')->fields($media_title_field)->execute();
+          }
+          $field_info_array = (array) $file;
+          // Add the new images to node item.
+          array_push($gallery_image_array, $field_info_array);
+        }
+        $node_item->$field_name = array($langcode => $gallery_image_array);
+        $node_item = node_save($node_item);
+        if ($node_item) {
+          watchdog('image_import_details', 'Node with id: @node_id, saved with new images.', array('@node_id' => $node_item->nid), WATCHDOG_INFO);
+        }
+      }
+    }
+    $iteration_counter++;
+  }
+}

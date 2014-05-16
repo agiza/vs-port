@@ -1,0 +1,34 @@
+diff --git a/jw_player.theme.inc b/jw_player.theme.inc
+index 75f8fc8..8483664 100755
+--- a/jw_player.theme.inc
++++ b/jw_player.theme.inc
+@@ -131,6 +131,10 @@ function theme_jw_player_formatter($variables) {
+     unset($config['playlist'], $config['playlist.position'], $config['playlist.size']);
+   }
+ 
++  // modes config
++  $flashplayer_defaults = jw_player_default_settings();
++  unset($config['flashplayer']);
++  $config['modes'] = array(array('type' => 'html5'), array('type' => 'flash', 'src' => $flashplayer_defaults['flashplayer']));
+ 
+   // Allow other modules to alter the configuration of the player before it's rendered.
+   drupal_alter('jw_player_config', $config, $file);
+@@ -148,9 +152,15 @@ function theme_jw_player($variables) {
+   $player_path = libraries_get_path('jwplayer');
+ 
+   // add dependent resources
+-  drupal_add_js($player_path . '/jwplayer.js');
++  drupal_add_js($player_path . '/jwplayer.js'); // Adds library
+   drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
+   drupal_add_js(array('jw_player' => array($html_id => $config)), 'setting');
+-
+-  return '<div id="' . $html_id . '"></div>';
++  
++  $html_video_markup = '<div class="jwplayer-video">';
++  $html_video_markup .= '<video id="' . $html_id . '" width="' . $variables['config']['width'] . '" height="' . $variables['config']['height'] . '" controls="controls" preload="auto">';
++  $html_video_markup .= '<source src="' . $variables['config']['file'] . '" type="video/mp4; codecs=\'avc1.42E01E, mp4a.40.2\'" />';
++  $html_video_markup .= '</video>';
++  $html_video_markup .= '</div>';
++  
++  return $html_video_markup;
+ }

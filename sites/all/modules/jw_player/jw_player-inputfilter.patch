@@ -1,0 +1,80 @@
+diff --git a/jw_player.module b/jw_player.module
+index c02ba5b..744bf41 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -479,4 +479,74 @@ function jw_player_preset_plugins($name = NULL) {
+   }
+ 
+   return $plugins;
++}
++
++/**
++ * Implements hook_filter_info().
++ */
++function jw_player_filter_info() {
++  $filters = array();
++  $filters['jw_player_shortcode'] = array(
++    'title' => t('JW Player Filter'),
++    'description' => t('Substitutes [jwplayer] short code markup with video embedded.'),
++    'process callback' => 'jw_player_jw_player_shortcode_process',
++    'tips callback' => 'jw_player_jw_player_shortcode_tips',
++    'weight' => 0,
++  );
++  return $filters;
++}
++
++/**
++ * Helper function to provide on screen tips for using the filter
++ */
++function jw_player_jw_player_shortcode_tips($filter, $format, $long = FALSE) {
++  return t('You may insert videos with the [jwplayer] shortcode markup.');
++}
++
++/**
++ * Callback function to perform the content processing.
++ */
++function jw_player_jw_player_shortcode_process($text, $filter, $format, $langcode, $cache, $cache_id) {
++  // detect jwplayer in the context
++  $regex = "/\[(\<br \/\>|\s)*jwplayer(\<br \/\>|\s)*(\|([a-zA-Z0-9_.\s]+=[-a-zA-Z0-9+.,\(\){}:&@#\/\?<>\"%=~_\'\"\s]+))*(\<br \/\>|\s)*\]/";
++  $patterns = array();
++  $players = array();
++  // search for jwplayer instances
++  if (preg_match_all($regex, $text, $matches)) {
++    // may have to process more then one inline match
++    foreach ($matches[0] as $count => $match) {
++      $tag = $match;
++      $options = array();
++      $sources = array();
++      $tag = str_replace("<br />", "", $tag);
++      $tag = preg_replace("/\[(\s)*jwplayer(\s)*(\||\])/", "", $tag);
++      $tag = str_replace("]", "", $tag);
++      $args = preg_split("/\|/", $tag);
++      // validate parameters and add into options array
++      foreach ($args as $fvar) {
++        $key_val = preg_split("/=/", $fvar, 2);
++        // target sources
++        switch (trim($key_val[0])) {
++          case "file":
++          case "image":
++          case "html5_file":
++          case "download_file":
++            $sources[]['file_path'] = trim(preg_replace("/<(.)*>/U", "", $key_val[1]));
++          break;
++        }
++        // build array of options as long as they aren't empty
++        if ($key_val[0] !="") {
++          // strip out damaging auto link filter
++          $options[trim($key_val[0])] = trim(preg_replace("/<(.)*>/U", "", $key_val[1]));
++        }
++      }
++      // render screen replacement
++      $players[] = theme('jw_player', array('sources' => $sources,'options' => $options));
++      // increment array of regex statements to match replacement
++      $patterns[] = $regex;
++    }
++    // replace each item with the matching player output
++    $text = preg_replace($patterns, $players, $text, 1);
++  }
++  return $text;
+ }
+\ No newline at end of file

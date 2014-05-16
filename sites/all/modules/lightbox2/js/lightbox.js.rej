@@ -1,0 +1,18 @@
+--- lightbox.js 2 Sep 2008 16:01:12 -0000 1.5.2.6.4.92
++++ lightbox.js 5 Sep 2008 14:32:56 -0000
+@@ -63,6 +63,7 @@
+ 
+   // Video and modal options.
+   enableVideo : false,
++  flvPlayer : '/flvplayer.swf',
+   isModal : false,
+   isVideo : false,
+   videoId : false,
+@@ -115,6 +116,7 @@
+     Lightbox.iframe_height = s.iframe_height;
+     Lightbox.iframe_border = s.iframe_border;
+     Lightbox.enableVideo = s.enable_video;
++    Lightbox.flvPlayer = s.flvPlayer;
+ 
+     // Attach lightbox to any links with lightbox rels.
+     Lightbox.initList();

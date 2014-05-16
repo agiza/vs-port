@@ -1,0 +1,28 @@
+From 8122efad00eb5b85a3e37ae59e4c9f07a4674bb7 Mon Sep 17 00:00:00 2001
+From: Pierre Buyle <buyle@pheromone.ca>
+Date: Thu, 23 Jan 2014 15:01:03 -0500
+Subject: [PATCH] Issue #2180179: Player does not load when JavaScript
+ aggregation is enabled.
+
+---
+ jw_player.module |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/jw_player.module b/jw_player.module
+index 84ee476..2ceb89d 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -432,7 +432,9 @@ function jw_player_process_jw_player(&$variables) {
+   $variables['jw_player_inline_js_code'] = stripslashes(json_encode($variables['config']));
+  
+   // Add js file that enables url based seeking.
+-  drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js');
++  drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js', array(
++    'preprocess' => FALSE,
++  ));
+   //drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
+   drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player_seek.js');
+   
+-- 
+1.7.10.4
+

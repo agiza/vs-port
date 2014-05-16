@@ -1,0 +1,160 @@
+diff --git a/plugins/jw_player_captions/jw_player_captions.info b/plugins/jw_player_captions/jw_player_captions.info
+new file mode 100644
+index 0000000..3eb5e52
+--- /dev/null
++++ b/plugins/jw_player_captions/jw_player_captions.info
+@@ -0,0 +1,7 @@
++name = JW Player Captions
++description = Adds captions support into the JW Player
++version = VERSION
++core = 7.x
++dependencies[] = jw_player
++files[] = jw_player_captions.module
++
+diff --git a/plugins/jw_player_captions/jw_player_captions.module b/plugins/jw_player_captions/jw_player_captions.module
+new file mode 100644
+index 0000000..9d44249
+--- /dev/null
++++ b/plugins/jw_player_captions/jw_player_captions.module
+@@ -0,0 +1,141 @@
++<?php
++
++/**
++ * Implements hook_jw_player_plugin_info().
++ *
++ * @return array Associative array of plugins keyed by actual plugin id
++ */
++function jw_player_captions_jw_player_plugin_info() {
++  // Create a plugin keyed by its actual plugin id.
++  $plugins ['caption-2'] = array (
++      'name' => t ( 'Caption' ),
++      'description' => t ( 'A plugin to support captions' ),
++      'config options' => array (
++          'back' => array (
++              '#title' => t ( 'Black background' ),
++              '#type' => 'select',
++              '#options' => array (
++                  'TRUE' => 'TRUE',
++                  'FALSE' => 'FALSE'
++              ),
++              '#default_value' => 'TRUE',
++              '#description' => t ( 'By default, a black background is displayed around the captions.  Set this option to false to discard the background and print a thin black outline around the captions instead.  Note this outline will not be available on Internet Explorer 9 in HTML5 mode! It will in IE10 though.' )
++          ),
++          'colour' => array (
++              '#title' => t ( 'Colour' ),
++              '#type' => 'textfield',
++              '#required' => FALSE,
++              '#size' => 6,
++              '#default_value' => 'FFFFFF',
++              '#description' => t ( 'Can be any hexadecimal color value.  The default is FFFFFF.' )
++          ),
++          'caption_field' => array (
++              '#title' => t ( 'Caption field' ),
++              '#type' => 'textfield',
++              '#required' => TRUE,
++              '#size' => 128,
++              '#default_value' => 'field_caption',
++              '#description' => t ( 'Name of the caption field as defined in the video file type.' )
++          ),
++          'video_field' => array (
++              '#title' => t ( 'Video field' ),
++              '#type' => 'textfield',
++              '#required' => TRUE,
++              '#size' => 128,
++              '#default_value' => 'field_video',
++              '#description' => t ( 'Name of the video field as defined in the video content type.' )
++          ),
++          'fontsize' => array (
++              '#title' => t ( 'Font size' ),
++              '#type' => 'textfield',
++              '#required' => FALSE,
++              '#size' => 2,
++              '#default_value' => '',
++              '#description' => t ( 'By default, the captions are displayed using a font size that fits 80 characters per line.  Use this option to override this selection with a specific fontsize in pixels (e.g. 20).  Note the captions are still scaled up during fullscreen playback.' )
++          ),
++          // TODO: Iterate over all installed languages to write a label for each?
++          // 'label' => array(
++          // '#title' => t('Label'),
++          // '#type' => 'textfield',
++          // '#required' => TRUE,
++          // '#size' => 25,
++          // '#default_value' => 'On',
++          // '#description' => t('A human-readable name of the captions track (e.g. English Captions). This is displayed in the captions selection menu if more than one track is provided.')
++          // ),
++          'state' => array (
++              '#title' => t ( 'State' ),
++              '#type' => 'select',
++              '#options' => array (
++                  'TRUE' => 'TRUE',
++                  'FALSE' => 'FALSE'
++              ),
++              '#default_value' => 'FALSE',
++              '#description' => t ( 'Set this to true if you want these captions to display on startup.  If you don\'t set it, the captions are off by default and users have to enable them using the CC menu.' )
++          )
++      )
++  );
++  return $plugins;
++}
++
++/**
++ * Implements template_preprocess_jw_player().
++ *
++ * http://www.longtailvideo.com/support/jw-player/28845/adding-video-captions
++ */
++function jw_player_captions_preprocess_jw_player(&$variables) {
++  // Check the plugin is enabled
++  if (isset ( $variables ['plugins'] ['caption-2'] ['enable'] ) && $variables ['plugins'] ['caption-2'] ['enable'] == 1) {
++    $captions_url = get_captions_uri ( $variables ['plugins'] ['caption-2'] ['video_field'], $variables ['plugins'] ['caption-2'] ['caption_field'] );
++    // Write the caption info.
++    if ($captions_url !== NULL) {
++      $variables ['config'] ['playlist'] [0] ['tracks'] [0] ['file'] = $captions_url;
++      // TODO: How can the human-readable name of the captions track be specified for multilingual sites?
++      $variables ['config'] ['playlist'] [0] ['tracks'] [0] ['label'] = t ( 'On' ); // $variables['plugins']['caption-2']['label'];
++      $variables ['config'] ['playlist'] [0] ['tracks'] [0] ['kind'] = 'captions';
++      $variables ['config'] ['playlist'] [0] ['tracks'] [0] ['default'] = $variables ['plugins'] ['caption-2'] ['state'];
++    }
++
++    $variables ['config'] ['captions'] ['back'] = $variables ['plugins'] ['caption-2'] ['back'];
++    $variables ['config'] ['captions'] ['color'] = $variables ['plugins'] ['caption-2'] ['colour'];
++    $variables ['config'] ['captions'] ['fontsize'] = $variables ['plugins'] ['caption-2'] ['fontsize'];
++  }
++}
++
++/**
++ * Retrieve the URL of the captions file for the current page.
++ *
++ * @param string $video_field_name
++ * @param string $caption_field_name
++ * @return The URL of the captions file or NULL if not found.
++ */
++function get_captions_uri($video_field_name, $caption_field_name) {
++  $url = NULL;
++
++  // Get the id of the current page.
++  $entity_id = substr ( $_GET ['q'], strrpos ( $_GET ['q'], "/" ) + 1 );
++
++  // Get the id of the video file associated with the current page.
++  $table = 'field_data_' . $video_field_name;
++  $video_fid = db_query ( 'SELECT field_video_fid FROM {' . $table . '} WHERE entity_id = :id', array (
++      ':id' => $entity_id
++  ) )->fetchField ();
++
++  // Get the id of the caption file for the current video.
++  $table = 'field_data_' . $caption_field_name;
++  $caption_fid = db_query ( 'SELECT field_caption_fid FROM {' . $table . '} WHERE entity_id = :id', array (
++      ':id' => $video_fid
++  ) )->fetchField ();
++
++  // Get the location of the caption file if it exists.
++  if ($caption_fid > 0) {
++    $uri = db_query ( 'SELECT uri FROM {file_managed} WHERE fid = :id', array (
++        ':id' => $caption_fid
++    ) )->fetchField ();
++
++    if ($uri !== NULL) {
++      $url = file_create_url ( $uri );
++    }
++  }
++
++  return $url;
++}

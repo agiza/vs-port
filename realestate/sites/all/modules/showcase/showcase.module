@@ -1,0 +1,94 @@
+<?php
+/** 
+ * @file
+ *  The main module file showcasing the rListing listing nodes.
+ */
+
+
+
+/**
+ * hook_block_info();
+ */
+function showcase_block_info() {
+  $blocks = array();
+
+  $blocks['rlisting_listing_showcase']['info'] = t('Listing Showcase');
+
+  return $blocks;
+
+};
+
+/**
+ * hook_block_view();
+ */
+function showcase_block_view($delta = '') {
+
+  switch ($delta) {
+    case 'rlisting_listing_showcase':
+      $block['subject'] = t('Listing Showcase');
+      $block['content'] = showcase_listing_showcase();
+    break;
+  };
+
+  return $block;
+};
+
+/**
+ * hook_block_view()
+ */
+function showcase_listing_showcase() {
+
+  drupal_add_css(drupal_get_path('module', 'showcase') . '/css/showcase.css');
+  $path = libraries_get_path('camera');
+
+  drupal_add_css( $path . '/css/camera.css');  
+  drupal_add_js( $path . '/scripts/jquery.mobile.customized.min.js');
+  drupal_add_js( $path . '/scripts/jquery.easing.1.3.js');  
+  drupal_add_js( $path . '/scripts/camera.min.js');
+  drupal_add_js(drupal_get_path('module', 'showcase') . '/js/showcase.js');
+
+  $showcase_term_id = variable_get('rlisting_showcase_term',3);
+
+  $nids = taxonomy_select_nodes($showcase_term_id);
+  $nodes = node_load_multiple($nids);  
+  $slides = '';
+  foreach($nodes as $node) {
+    $image_path = $node->rlisting_photos['und'][0]['uri'];    if (!empty($image_path)) {
+      $showcase = array(
+        'style_name' => 'rlisting-showcase',
+        'path' => $node->rlisting_photos['und'][0]['uri'],
+        'width' => '',
+        'height' => '',
+      );
+      $thumbnail_url = image_style_url('rlisting-mini', $image_path);
+      //$image = theme_image_style($showcase);
+      $image_path = image_style_url('rlisting-showcase', $image_path);
+
+      $items = field_get_items('node', $node, 'rlisting_price');
+      $price = $items[0]['value'];
+
+      $items = field_get_items('node', $node, 'rlisting_bedroom');
+      $itemsbath = field_get_items('node', $node, 'rlisting_bathroom');
+      $bed_bath = format_plural($items[0]['value'], '1 bedroom', '@count bedrooms') . ', ' . format_plural($itemsbath[0]['value'], '1 bathroom', '@count bathrooms');
+
+      $slides .= '
+          <div data-src="' . $image_path . '" data-thumb="' . $thumbnail_url . '">
+            <div class="camera_caption elemHover fromLeft">
+            ' . $price . ' - ' . theme('rlisting_listing_title', array('node' => $node)). '<br /> 
+            ' . $bed_bath . '
+            </div>
+          </div>
+      ';
+    };
+
+  };
+
+  $output = '
+<div id="pix_diapo">
+    ' . $slides . '
+</div>
+  ';
+
+  return $output;
+
+};

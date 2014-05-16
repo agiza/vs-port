@@ -1,0 +1,120 @@
+Index: README.txt
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/lightbox2/README.txt,v
+retrieving revision 1.11.2.1.4.15
+diff -u -p -r1.11.2.1.4.15 README.txt
+--- README.txt 15 Aug 2008 11:21:44 -0000 1.11.2.1.4.15
++++ README.txt 5 Sep 2008 14:32:54 -0000
+@@ -54,6 +54,9 @@ INSTALLATION
+ 4. Configure the module at admin/settings/lightbox2.
+ 5. Modify your image links to open in a lightbox where necessary, see "Adding
+    Lightbox Functionality to your Images' section below.
++6. If you need to play flv files, then you may need to install a FLV player.
++   There are a number of freely available ones on the Internet, including
++   http://www.jeroenwijering.com/
+
+
+ ADDING LIGHTBOX FUNCTIONALITY TO YOUR IMAGES
+Index: lightbox2.install
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/lightbox2/lightbox2.install,v
+retrieving revision 1.1.4.5.2.33
+diff -u -p -r1.1.4.5.2.33 lightbox2.install
+--- lightbox2.install 25 Aug 2008 14:08:53 -0000 1.1.4.5.2.33
++++ lightbox2.install 5 Sep 2008 14:32:54 -0000
+@@ -32,6 +32,7 @@ function lightbox2_uninstall() {
+   variable_del('lightbox2_disable_zoom');
+   variable_del('lightbox2_enable_login');
+   variable_del('lightbox2_enable_video');
++  variable_del('lightbox2_flv_player_path');
+   variable_del('lightbox2_page_init_action');
+   variable_del('lightbox2_page_list');
+   variable_del('lightbox2_disable_these_urls');
+Index: lightbox2.module
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/lightbox2/lightbox2.module,v
+retrieving revision 1.16.2.17.2.124
+diff -u -p -r1.16.2.17.2.124 lightbox2.module
+--- lightbox2.module 4 Sep 2008 10:57:46 -0000 1.16.2.17.2.124
++++ lightbox2.module 5 Sep 2008 14:32:56 -0000
+@@ -431,6 +431,14 @@ function lightbox2_general_settings_form
+     '#default_value' => variable_get('lightbox2_enable_video', FALSE),
+   );
+
++  // Add textfield for FLV Player path.
++  $form['video_fieldset']['lightbox2_flv_player_path'] = array(
++    '#type' => 'textfield',
++    '#title' => t('Path to FLV Player'),
++    '#description' => t('The path to the FLV player, relative to Drupal root directory.'),
++    '#default_value' => variable_get('lightbox2_flv_player_path', '/flvplayer.swf'),
++  );
++
+   // Add fieldset for page specific lightbox2 settings.
+   $form['lightbox2_page_init'] = array(
+     '#type' => 'fieldset',
+@@ -1528,6 +1536,7 @@ function lightbox2_add_files() {
+     'iframe_border' => variable_get('lightbox2_frame_border', 1),
+     // Video settings.
+     'enable_video' => variable_get('lightbox2_enable_video', FALSE),
++    'flvPlayer' => variable_get('lightbox2_flv_player_path', '/flvplayer.swf'),
+   );
+   drupal_add_js(array('lightbox2' => $js_settings), 'setting');
+
+Index: js/lightbox.js
+RCS file: /cvs/drupal-contrib/contributions/modules/lightbox2/js/lightbox.js,v
+retrieving revision 1.5.2.6.4.92
+diff -u -p -r1.5.2.6.4.92 lightbox.js
+--- js/lightbox.js 2 Sep 2008 16:01:12 -0000 1.5.2.6.4.92
++++ js/lightbox.js 5 Sep 2008 14:32:56 -0000
+@@ -63,6 +63,7 @@ var Lightbox = {
+
+   // Video and modal options.
+   enableVideo : false,
++  flvPlayer : '/flvplayer.swf',
+   isModal : false,
+   isVideo : false,
+   videoId : false,
+@@ -115,6 +116,7 @@ var Lightbox = {
+     Lightbox.iframe_height = s.iframe_height;
+     Lightbox.iframe_border = s.iframe_border;
+     Lightbox.enableVideo = s.enable_video;
++    Lightbox.flvPlayer = s.flvPlayer;
+
+     // Attach lightbox to any links with lightbox rels.
+     Lightbox.initList();
+Index: js/lightbox_video.js
+===================================================================
+RCS file: /cvs/drupal-contrib/contributions/modules/lightbox2/js/Attic/lightbox_video.js,v
+retrieving revision 1.1.2.9
+diff -u -p -r1.1.2.9 lightbox_video.js
+--- js/lightbox_video.js 8 Aug 2008 16:42:15 -0000 1.1.2.9
++++ js/lightbox_video.js 5 Sep 2008 14:32:56 -0000
+@@ -25,14 +25,15 @@ var Lightvideo = {
+     }
+     else {
+       Lightbox.videoId = href;
+-      Lightvideo.createEmbed(href, "flvvideo", "#ffffff");
++      href = Lightbox.flvPlayer + '?file=' + href;
++      Lightvideo.createEmbed(href, "flvplayer", "#ffffff");
+     }
+   },
+
+   // createEmbed()
+   createEmbed: function(href, id, color, variables) {
+     var bgcolor = 'bgcolor="' + color + '"';
+-    var flashvars = "";
++    var flashvars = '';
+     if (variables) {
+       flashvars = variables;
+     }
+@@ -42,8 +43,8 @@ var Lightvideo = {
+       'id="' + id + '" name="' + id + '" ' + bgcolor + ' ' +
+       'quality="high" wmode="transparent" ' + flashvars + ' ' +
+       'height="' + Lightbox.modalHeight + '" ' +
+-      'width="' + Lightbox.modalWidth + ' ' +
+-      '"></embed>';
++      'width="' + Lightbox.modalWidth + '" ' +
++      '></embed>';
+   },
+
+

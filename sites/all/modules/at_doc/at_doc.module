@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file at_doc.module
+ */
+
+/**
+ * Implements hook_permission()
+ */
+function at_doc_permission() {
+  $items['at-doc access'] = array(
+    'title' => 'Acccess Website Documentation',
+    'description' => '',
+  );
+
+  return $items;
+}

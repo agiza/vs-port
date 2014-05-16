@@ -1,0 +1,27 @@
+From 5b4c8f36e75b597352180b7acaea360d80242f2c Mon Sep 17 00:00:00 2001
+From: Pierre Buyle <buyle@pheromone.ca>
+Date: Thu, 23 Jan 2014 14:28:01 -0500
+Subject: [PATCH] Issue #1980940: Cannot use object of type stdClass as array.
+
+---
+ jw_player.module |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/jw_player.module b/jw_player.module
+index 449f3fd..84ee476 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -316,6 +316,10 @@ function jw_player_default_settings() {
+  * Process variables for jw_player.tpl.php.
+  */
+ function template_preprocess_jw_player(&$variables) {
++  //In some instances an object is passed so convert to an array
++  if(is_object($variables['file'])) {
++    $variables['file'] = (array) $variables['file'];
++  }
+ 
+   // Load defaults as the starting point.
+   $default_settings = jw_player_default_settings();
+-- 
+1.7.10.4
+

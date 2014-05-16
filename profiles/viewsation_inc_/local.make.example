@@ -1,0 +1,331 @@
+; viewsation_inc_ make file for local development
+core = "7.x"
+api = "2"
+
+projects[drupal][version] = "7.x"
+; include the d.o. profile base
+includes[] = "drupal-org.make"
+
+; +++++ Libraries +++++
+
+; jquery.nicescroll
+libraries[jquery.nicescroll][directory_name] = "jquery.nicescroll"
+libraries[jquery.nicescroll][type] = "library"
+libraries[jquery.nicescroll][destination] = "libraries"
+libraries[jquery.nicescroll][download][type] = "get"
+libraries[jquery.nicescroll][download][url] = "" ; TODO add download URI
+
+; jqzoom_ev-2.3
+libraries[jqzoom_ev-2.3][directory_name] = "jqzoom_ev-2.3"
+libraries[jqzoom_ev-2.3][type] = "library"
+libraries[jqzoom_ev-2.3][destination] = "libraries"
+libraries[jqzoom_ev-2.3][download][type] = "get"
+libraries[jqzoom_ev-2.3][download][url] = "" ; TODO add download URI
+
+; jquery.isotope
+libraries[jquery.isotope][directory_name] = "jquery.isotope"
+libraries[jquery.isotope][type] = "library"
+libraries[jquery.isotope][destination] = "libraries"
+libraries[jquery.isotope][download][type] = "get"
+libraries[jquery.isotope][download][url] = "" ; TODO add download URI
+
+; amazon-s3-php-class
+libraries[amazon-s3-php-class][directory_name] = "amazon-s3-php-class"
+libraries[amazon-s3-php-class][type] = "library"
+libraries[amazon-s3-php-class][destination] = "libraries"
+libraries[amazon-s3-php-class][download][type] = "get"
+libraries[amazon-s3-php-class][download][url] = "" ; TODO add download URI
+
+; jquery_expander
+libraries[jquery_expander][directory_name] = "jquery_expander"
+libraries[jquery_expander][type] = "library"
+libraries[jquery_expander][destination] = "libraries"
+libraries[jquery_expander][download][type] = "get"
+libraries[jquery_expander][download][url] = "" ; TODO add download URI
+
+; phpqrcode
+libraries[phpqrcode][directory_name] = "phpqrcode"
+libraries[phpqrcode][type] = "library"
+libraries[phpqrcode][destination] = "libraries"
+libraries[phpqrcode][download][type] = "get"
+libraries[phpqrcode][download][url] = "" ; TODO add download URI
+
+; pdf.js
+libraries[pdf.js][directory_name] = "pdf.js"
+libraries[pdf.js][type] = "library"
+libraries[pdf.js][destination] = "libraries"
+libraries[pdf.js][download][type] = "get"
+libraries[pdf.js][download][url] = "" ; TODO add download URI
+
+; easing
+libraries[easing][directory_name] = "easing"
+libraries[easing][type] = "library"
+libraries[easing][destination] = "libraries"
+libraries[easing][download][type] = "get"
+libraries[easing][download][url] = "" ; TODO add download URI
+
+; amazon-s3-php
+libraries[amazon-s3-php][directory_name] = "amazon-s3-php"
+libraries[amazon-s3-php][type] = "library"
+libraries[amazon-s3-php][destination] = "libraries"
+libraries[amazon-s3-php][download][type] = "get"
+libraries[amazon-s3-php][download][url] = "" ; TODO add download URI
+
+; reel
+libraries[reel][directory_name] = "reel"
+libraries[reel][type] = "library"
+libraries[reel][destination] = "libraries"
+libraries[reel][download][type] = "get"
+libraries[reel][download][url] = "" ; TODO add download URI
+
+; s3-php5-curl
+libraries[s3-php5-curl][directory_name] = "s3-php5-curl"
+libraries[s3-php5-curl][type] = "library"
+libraries[s3-php5-curl][destination] = "libraries"
+libraries[s3-php5-curl][download][type] = "get"
+libraries[s3-php5-curl][download][url] = "" ; TODO add download URI
+
+; jwplayer
+libraries[jwplayer][directory_name] = "jwplayer"
+libraries[jwplayer][type] = "library"
+libraries[jwplayer][destination] = "libraries"
+libraries[jwplayer][download][type] = "get"
+libraries[jwplayer][download][url] = "" ; TODO add download URI
+
+; json2
+libraries[json2][directory_name] = "json2"
+libraries[json2][type] = "library"
+libraries[json2][destination] = "libraries"
+libraries[json2][download][type] = "get"
+libraries[json2][download][url] = "" ; TODO add download URI
+
+; zencoder-php
+libraries[zencoder-php][directory_name] = "zencoder-php"
+libraries[zencoder-php][type] = "library"
+libraries[zencoder-php][destination] = "libraries"
+libraries[zencoder-php][download][type] = "get"
+libraries[zencoder-php][download][url] = "" ; TODO add download URI
+
+; spritespin-j360
+libraries[spritespin-j360][directory_name] = "spritespin-j360"
+libraries[spritespin-j360][type] = "library"
+libraries[spritespin-j360][destination] = "libraries"
+libraries[spritespin-j360][download][type] = "get"
+libraries[spritespin-j360][download][url] = "" ; TODO add download URI
+
+; jStorage
+libraries[jStorage][directory_name] = "jStorage"
+libraries[jStorage][type] = "library"
+libraries[jStorage][destination] = "libraries"
+libraries[jStorage][download][type] = "get"
+libraries[jStorage][download][url] = "" ; TODO add download URI
+
+; jquery
+libraries[jquery][directory_name] = "jquery"
+libraries[jquery][type] = "library"
+libraries[jquery][destination] = "libraries"
+libraries[jquery][download][type] = "get"
+libraries[jquery][download][url] = "" ; TODO add download URI
+
+; awssdk
+libraries[awssdk][directory_name] = "awssdk"
+libraries[awssdk][type] = "library"
+libraries[awssdk][destination] = "libraries"
+libraries[awssdk][download][type] = "get"
+libraries[awssdk][download][url] = "" ; TODO add download URI
+
+; flowplayer
+libraries[flowplayer][directory_name] = "flowplayer"
+libraries[flowplayer][type] = "library"
+libraries[flowplayer][destination] = "libraries"
+libraries[flowplayer][download][type] = "get"
+libraries[flowplayer][download][url] = "" ; TODO add download URI
+
+; jquery-mousewheel
+libraries[jquery-mousewheel][directory_name] = "jquery-mousewheel"
+libraries[jquery-mousewheel][type] = "library"
+libraries[jquery-mousewheel][destination] = "libraries"
+libraries[jquery-mousewheel][download][type] = "get"
+libraries[jquery-mousewheel][download][url] = "" ; TODO add download URI
+
+; cloud-zoom
+libraries[cloud-zoom][directory_name] = "cloud-zoom"
+libraries[cloud-zoom][type] = "library"
+libraries[cloud-zoom][destination] = "libraries"
+libraries[cloud-zoom][download][type] = "get"
+libraries[cloud-zoom][download][url] = "" ; TODO add download URI
+
+; respond
+libraries[respond][directory_name] = "respond"
+libraries[respond][type] = "library"
+libraries[respond][destination] = "libraries"
+libraries[respond][download][type] = "get"
+libraries[respond][download][url] = "" ; TODO add download URI
+
+; liquidslider
+libraries[liquidslider][directory_name] = "liquidslider"
+libraries[liquidslider][type] = "library"
+libraries[liquidslider][destination] = "libraries"
+libraries[liquidslider][download][type] = "get"
+libraries[liquidslider][download][url] = "" ; TODO add download URI
+
+; respond.js
+libraries[respond.js][directory_name] = "respond.js"
+libraries[respond.js][type] = "library"
+libraries[respond.js][destination] = "libraries"
+libraries[respond.js][download][type] = "get"
+libraries[respond.js][download][url] = "" ; TODO add download URI
+
+; jquery.cycle
+libraries[jquery.cycle][directory_name] = "jquery.cycle"
+libraries[jquery.cycle][type] = "library"
+libraries[jquery.cycle][destination] = "libraries"
+libraries[jquery.cycle][download][type] = "get"
+libraries[jquery.cycle][download][url] = "" ; TODO add download URI
+
+; animate.css
+libraries[animate.css][directory_name] = "animate.css"
+libraries[animate.css][type] = "library"
+libraries[animate.css][destination] = "libraries"
+libraries[animate.css][download][type] = "get"
+libraries[animate.css][download][url] = "" ; TODO add download URI
+
+; jquery.fitvids.js
+libraries[jquery.fitvids.js][directory_name] = "jquery.fitvids.js"
+libraries[jquery.fitvids.js][type] = "library"
+libraries[jquery.fitvids.js][destination] = "libraries"
+libraries[jquery.fitvids.js][download][type] = "get"
+libraries[jquery.fitvids.js][download][url] = "" ; TODO add download URI
+
+; PIE
+libraries[PIE][directory_name] = "PIE"
+libraries[PIE][type] = "library"
+libraries[PIE][destination] = "libraries"
+libraries[PIE][download][type] = "get"
+libraries[PIE][download][url] = "" ; TODO add download URI
+
+; jwplayer_skins
+libraries[jwplayer_skins][directory_name] = "jwplayer_skins"
+libraries[jwplayer_skins][type] = "library"
+libraries[jwplayer_skins][destination] = "libraries"
+libraries[jwplayer_skins][download][type] = "get"
+libraries[jwplayer_skins][download][url] = "" ; TODO add download URI
+
+; pie
+libraries[pie][directory_name] = "pie"
+libraries[pie][type] = "library"
+libraries[pie][destination] = "libraries"
+libraries[pie][download][type] = "get"
+libraries[pie][download][url] = "" ; TODO add download URI
+
+; markitup
+libraries[markitup][directory_name] = "markitup"
+libraries[markitup][type] = "library"
+libraries[markitup][destination] = "libraries"
+libraries[markitup][download][type] = "get"
+libraries[markitup][download][url] = "" ; TODO add download URI
+
+; erta
+libraries[erta][directory_name] = "erta"
+libraries[erta][type] = "library"
+libraries[erta][destination] = "libraries"
+libraries[erta][download][type] = "get"
+libraries[erta][download][url] = "" ; TODO add download URI
+
+; jspdf
+libraries[jspdf][directory_name] = "jspdf"
+libraries[jspdf][type] = "library"
+libraries[jspdf][destination] = "libraries"
+libraries[jspdf][download][type] = "get"
+libraries[jspdf][download][url] = "" ; TODO add download URI
+
+; selectnav.js
+libraries[selectnav.js][directory_name] = "selectnav.js"
+libraries[selectnav.js][type] = "library"
+libraries[selectnav.js][destination] = "libraries"
+libraries[selectnav.js][download][type] = "get"
+libraries[selectnav.js][download][url] = "" ; TODO add download URI
+
+; nivo-slider
+libraries[nivo-slider][directory_name] = "nivo-slider"
+libraries[nivo-slider][type] = "library"
+libraries[nivo-slider][destination] = "libraries"
+libraries[nivo-slider][download][type] = "get"
+libraries[nivo-slider][download][url] = "" ; TODO add download URI
+
+; video-js
+libraries[video-js][directory_name] = "video-js"
+libraries[video-js][type] = "library"
+libraries[video-js][destination] = "libraries"
+libraries[video-js][download][type] = "get"
+libraries[video-js][download][url] = "" ; TODO add download URI
+
+; FitVids
+libraries[fitvids][directory_name] = "fitvids"
+libraries[fitvids][type] = "library"
+libraries[fitvids][destination] = "libraries"
+libraries[fitvids][download][type] = "get"
+libraries[fitvids][download][url] = "https://raw.github.com/davatron5000/FitVids.js/master/jquery.fitvids.js"
+
+; zencoder
+libraries[zencoder][directory_name] = "zencoder"
+libraries[zencoder][type] = "library"
+libraries[zencoder][destination] = "libraries"
+libraries[zencoder][download][type] = "get"
+libraries[zencoder][download][url] = "" ; TODO add download URI
+
+; jquery.bxslider
+libraries[jquery.bxslider][directory_name] = "jquery.bxslider"
+libraries[jquery.bxslider][type] = "library"
+libraries[jquery.bxslider][destination] = "libraries"
+libraries[jquery.bxslider][download][type] = "get"
+libraries[jquery.bxslider][download][url] = "" ; TODO add download URI
+
+; selectivizr
+libraries[selectivizr][directory_name] = "selectivizr"
+libraries[selectivizr][type] = "library"
+libraries[selectivizr][destination] = "libraries"
+libraries[selectivizr][download][type] = "get"
+libraries[selectivizr][download][url] = "" ; TODO add download URI
+
+; pdfjs
+libraries[pdfjs][directory_name] = "pdfjs"
+libraries[pdfjs][type] = "library"
+libraries[pdfjs][destination] = "libraries"
+libraries[pdfjs][download][type] = "get"
+libraries[pdfjs][download][url] = "" ; TODO add download URI
+
+; PDF_using_mPDF
+libraries[PDF_using_mPDF][directory_name] = "PDF_using_mPDF"
+libraries[PDF_using_mPDF][type] = "library"
+libraries[PDF_using_mPDF][destination] = "libraries"
+libraries[PDF_using_mPDF][download][type] = "get"
+libraries[PDF_using_mPDF][download][url] = "" ; TODO add download URI
+
+; fontawesome
+libraries[fontawesome][directory_name] = "fontawesome"
+libraries[fontawesome][type] = "library"
+libraries[fontawesome][destination] = "libraries"
+libraries[fontawesome][download][type] = "get"
+libraries[fontawesome][download][url] = "" ; TODO add download URI
+
+; querypath
+libraries[querypath][directory_name] = "querypath"
+libraries[querypath][type] = "library"
+libraries[querypath][destination] = "libraries"
+libraries[querypath][download][type] = "get"
+libraries[querypath][download][url] = "" ; TODO add download URI
+
+; ie7-js
+libraries[ie7-js][directory_name] = "ie7-js"
+libraries[ie7-js][type] = "library"
+libraries[ie7-js][destination] = "libraries"
+libraries[ie7-js][download][type] = "get"
+libraries[ie7-js][download][url] = "" ; TODO add download URI
+
+; +++++ Patches +++++
+
+projects[jw_player][patch][] = "jw_player-responsive_design-2183119-3.patch" ; TODO add path to patch
+
+projects[jw_player][patch][] = "jw_player-player_does_not_load_with_js_aggregation-2180179-1.patch" ; TODO add path to patch
+

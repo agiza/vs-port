@@ -1,0 +1,6 @@
+name = Showcase
+description = Real Estate Showcase
+package = rListing
+core = 7.x
+version = 1.x-dev
+dependecies[] = rlisting

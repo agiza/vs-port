@@ -1,0 +1,43 @@
+diff --git a/jw_player.admin.inc b/jw_player.admin.inc
+index 84fde21..1b806d9 100644
+--- a/jw_player.admin.inc
++++ b/jw_player.admin.inc
+@@ -16,7 +16,7 @@ function jw_player_settings_form($form) {
+     '#type' => 'checkbox',
+     '#title' => t('Use inline javascript'),
+     '#description' => t('With this option enabled JW Player configuration will be printed inline directly after the player markup. This can be useful if the player markup is cached as otherwise JW Player will not be loaded. The downside is that the player itself will be loaded on all pages.'),
+-    '#default_value' => variable_get('jw_player_inline_js', TRUE),
++    '#default_value' => variable_get('jw_player_inline_js', JW_PLAYER_INLINE_DEFAULT),
+   );
+ 
+   return system_settings_form($form);
+diff --git a/jw_player.module b/jw_player.module
+index b2b483d..c02ba5b 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -3,6 +3,7 @@
+  * @file
+  * Adds a theme function which allows theme developers to use the JW Player.
+  */
++define('JW_PLAYER_INLINE_DEFAULT', TRUE);
+ 
+ /**
+  * Implements hook_menu().
+@@ -435,7 +436,7 @@ function jw_player_process_jw_player(&$variables) {
+   // in the tpl file. This is needed so that the videos still have their config
+   // after page is cached. In this case the player itself is loaded on all pages
+   // via hook_init().
+-  if (variable_get('jw_player_inline_js', TRUE)) {
++  if (variable_get('jw_player_inline_js', JW_PLAYER_INLINE_DEFAULT)) {
+     $variables['jw_player_inline_js_code'] = stripslashes(json_encode($variables['config']));
+   }
+   // If inline is not selected, add all relevant JavaScript now.
+@@ -456,7 +457,7 @@ function jw_player_process_jw_player(&$variables) {
+  * needed.
+  */
+ function jw_player_init() {
+-  if (variable_get('jw_player_inline_js', FALSE)) {
++  if (variable_get('jw_player_inline_js', JW_PLAYER_INLINE_DEFAULT)) {
+     drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js'); // Add library
+   }
+ }

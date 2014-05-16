@@ -1,0 +1,22 @@
+--- jw_player.api.php
++++ jw_player.api.php
+@@ -33,4 +33,19 @@
+     ),
+   );
+   return $plugins;
++}
++/**
++ * Checks a file for JW Player supported media formats.
++ *
++ * This hook allow third party module to provide media formats verification for
++ * video and audio streams inside a JW Player formatted file.
++ *
++ * @param array|object $file
++ *   A file object (or array) to check for support.
++ *
++ * @return bool
++ *   TRUE if the file is supported by JW Player.
++ */
++function hook_jw_player_supports($file) {
++
+ }

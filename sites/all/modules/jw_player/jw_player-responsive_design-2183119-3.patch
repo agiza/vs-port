@@ -1,0 +1,117 @@
+From 917e7c3d809ecfb0144b26a581bfb6b706928c42 Mon Sep 17 00:00:00 2001
+From: Pierre Buyle <buyle@pheromone.ca>
+Date: Tue, 28 Jan 2014 11:01:41 -0500
+Subject: [PATCH] Issue #2183119: Support JW Player 6 responsive layout (%
+ based width and aspect ratio).
+
+---
+ jw_player.module                                 |    8 +++++
+ plugins/export_ui/jw_player_ctools_export_ui.inc |   42 ++++++++++++++++++----
+ 2 files changed, 43 insertions(+), 7 deletions(-)
+
+diff --git a/jw_player.module b/jw_player.module
+index 3ac2f25..d9f9541 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -345,6 +345,13 @@ function template_preprocess_jw_player(&$variables) {
+     // configured to use it.
+     if (!empty($preset)) {
+       $preset_settings = $preset['settings'];
++      if (!empty($preset_settings['responsive'])) {
++        unset($preset_settings['height']);
++        $preset_settings['width'] = $preset_settings['width'] . '%';
++      }
++      else {
++        unset($preset_settings['aspectratio']);
++      }
+     }
+   }
+ 
+@@ -412,6 +419,7 @@ function template_preprocess_jw_player(&$variables) {
+     'playlist.size',
+     'skin',
+     'stretching',
++    'aspectratio',
+   );
+   foreach ($config_variables as $key) {
+     if (!empty($variables[$key])) {
+diff --git a/plugins/export_ui/jw_player_ctools_export_ui.inc b/plugins/export_ui/jw_player_ctools_export_ui.inc
+index fad41db..50581e9 100644
+--- a/plugins/export_ui/jw_player_ctools_export_ui.inc
++++ b/plugins/export_ui/jw_player_ctools_export_ui.inc
+@@ -89,12 +89,20 @@ function jw_player_ctools_export_ui_form(&$form, &$form_state) {
+     '#default_value' => isset($settings['mode']) ? $settings['mode'] : 'html5',
+   );
+ 
++  $form['settings']['responsive'] = array(
++    '#type' => 'checkbox',
++    '#title' => 'Use a Responsive Design',
++    '#description' => 'Enable Responsive Design using a percentage based width and an aspect ratio.',
++    '#default_value' => $settings['responsive'],
++    '#weight' => 4.99,
++  );
++
+   $form['settings']['width'] = array(
+     '#type' => 'textfield',
+     '#size' => 10,
+     '#title' => t('Width'),
+     '#description' => t('Enter the width for this player.'),
+-    '#field_suffix' => ' ' . t('pixels'),
++    '#field_suffix' => ' ' . t('pixels or percentage'),
+     '#default_value' => $settings['width'],
+     '#required' => TRUE,
+     '#weight' => 5,
+@@ -109,6 +117,26 @@ function jw_player_ctools_export_ui_form(&$form, &$form_state) {
+     '#default_value' => $settings['height'],
+     '#required' => TRUE,
+     '#weight' => 6,
++    '#states' => array(
++      'visible' => array(
++        ':input[name="settings[responsive]"]' => array('checked' => FALSE),
++      ),
++    ),
++  );
++
++  $form['settings']['aspectratio'] = array(
++    '#type' => 'textfield',
++    '#size' => 10,
++    '#title' => t('Aspect ratio'),
++    '#description' => t('Enter the aspect ratio for this player.'),
++    '#default_value' => isset($settings['aspectratio']) ? $settings['aspectratio'] : '16:9',
++    '#required' => TRUE,
++    '#weight' => 6,
++    '#states' => array(
++      'visible' => array(
++        ':input[name="settings[responsive]"]' => array('checked' => TRUE),
++      ),
++    ),
+   );
+ 
+   $form['settings']['controls'] = array(
+@@ -174,17 +202,17 @@ function jw_player_ctools_export_ui_form(&$form, &$form_state) {
+     '#options' => $skin_options,
+   );
+   
+-  $form['settings']['stretching'] = array(
+-    '#title' => t('Stretching'),
+-    '#description' => t('How to resize the poster and video to fit the display.'),
+-    '#type' => 'select',
+-    '#default_value' => !empty($settings['skin']) ? $settings['skin']: 'uniform',
++  $form['settings']['stretching'] = array(
++    '#title' => t('Stretching'),
++    '#description' => t('How to resize the poster and video to fit the display.'),
++    '#type' => 'select',
++    '#default_value' => !empty($settings['skin']) ? $settings['skin']: 'uniform',
+     '#options' => array(
+       'none' => t('None (keep original dimensions)'),
+       'exactfit' => t(' Exact Fit (stretch disproportionally)'),
+       'uniform' => t('Uniform (stretch proportionally; black borders)'),
+       'fill' => t('Fill (stretch proportionally; parts cut off)'),
+-      ),
++      ),
+   );
+ 
+   // Add preset plugin settings.
+-- 
+1.7.10.4
+

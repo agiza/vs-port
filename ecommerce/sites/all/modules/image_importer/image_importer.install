@@ -1,0 +1,35 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the Image importer module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Define the module custom variables
+ */
+function image_importer_install() {
+  $default_path = '/sites/default/files/image_importer/';
+  file_prepare_directory($default_path, FILE_CREATE_DIRECTORY);
+  variable_set('image_importer_base_directory', $default_path);
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Delete the module custom variables
+ */
+function image_importer_uninstall() {
+  $importer_path = variable_get('image_importer_base_directory');
+  if (file_prepare_directory($importer_path)) {
+    // Directory is not removed if is not empty or have no rights.
+    $removed = drupal_rmdir($importer_path);
+    if (!$removed) {
+      drupal_set_message(t('The path "@ipath", cannot be removed', array('@ipath' => $importer_path)), 'error', FALSE);
+    }
+  }
+  variable_del('image_importer_base_directory');
+  variable_del('image_importer_affected_fields');
+  variable_del('image_importer_execute_with_cron');
+}

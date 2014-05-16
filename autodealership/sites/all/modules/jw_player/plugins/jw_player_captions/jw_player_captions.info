@@ -1,0 +1,7 @@
+name = JW Player Captions
+description = Adds captions support into the JW Player
+version = VERSION
+core = 7.x
+dependencies[] = jw_player
+files[] = jw_player_captions.module
+

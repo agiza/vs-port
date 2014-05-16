@@ -1,0 +1,13 @@
+name = Image Importer
+description = Creates a procedure that reads a folder content and import into Drupal
+package = CONTENT
+core = 7.x
+dependencies[] = image
+configure = admin/config/content/image_importer
+
+; Information added by Drupal.org packaging script on 2014-02-05
+version = "7.x-1.0"
+core = "7.x"
+project = "image_importer"
+datestamp = "1391639005"
+

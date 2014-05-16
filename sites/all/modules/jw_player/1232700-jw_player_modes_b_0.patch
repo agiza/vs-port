@@ -1,0 +1,54 @@
+diff --git a/jw_player.module b/jw_player.module
+index 7f89126..f9eef3f 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -307,8 +307,7 @@ function jw_player_preprocess_jw_player(&$variables) {
+     }
+   }
+ 
+-  // Set default player mode.
+-  // @todo Make player mode configurable.
++  // Initalize the player modes array.
+   $variables['config']['modes'] = array(
+     array('type' => 'html5'),
+     array(
+@@ -317,6 +316,17 @@ function jw_player_preprocess_jw_player(&$variables) {
+     ),
+   );
+ 
++  // If the preset has the primary mode set, modify the modes array to make
++  // sure that it comes first.
++  if (isset($variables['mode'])) {
++    foreach ($variables['config']['modes'] as $key => $value) {
++      if ($value['type'] == $variables['mode']) {
++        unset($variables['config']['modes'][$key]);
++        array_unshift($variables['config']['modes'], $value);
++      }
++    }
++  }
++
+   // Copy over all enabled plugins into the 'config' section as this is the key that is sent over to the player
+   if (!empty($variables['plugins'])) {
+     foreach ($variables['plugins'] as $plugin => $info) {
+diff --git a/plugins/export_ui/jw_player_ctools_export_ui.inc b/plugins/export_ui/jw_player_ctools_export_ui.inc
+index 18af740..4481917 100755
+--- a/plugins/export_ui/jw_player_ctools_export_ui.inc
++++ b/plugins/export_ui/jw_player_ctools_export_ui.inc
+@@ -83,6 +83,17 @@ function jw_player_ctools_export_ui_form(&$form, &$form_state) {
+      '#weight' => 2,
+    );
+ 
++  $form['settings']['mode'] = array(
++    '#type' => 'radios',
++    '#title' => t('Embed mode'),
++    '#description' => t('Select your primary embed mode. Choosing HTML5 primary means that modern browsers that also support flash will use the HTML5 player first where possible. While this is desirable, the Flash based player supports more features and is generally more reliable.'),
++    '#options' => array(
++      'flash' => t('Flash primary, HTML5 failover'),
++      'html5' => t('HTML5 primary, Flash failover'),
++    ),
++    '#default_value' => isset($settings['mode']) ? $settings['mode'] : 'html5',
++  );
++
+   $form['settings']['width'] = array(
+     '#type' => 'textfield',
+     '#size' => 10,

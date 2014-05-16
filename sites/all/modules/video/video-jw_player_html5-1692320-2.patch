@@ -1,0 +1,17 @@
+diff --git a/modules/video_ui/video.admin.inc b/modules/video_ui/video.admin.inc
+index 29584cd..ec876ff 100644
+--- a/modules/video_ui/video.admin.inc
++++ b/modules/video_ui/video.admin.inc
+@@ -447,5 +447,10 @@ function video_video_html5_players() {
+   if (module_exists('videojs')) {
+     $options['videojs'] = t('Video.js');
+   }
++
++  // Add JW Player support for HTML5 video.
++  if (module_exists('jw_player')) {
++    $options['jwplayer'] = t('JW Player');
++  }
+   return $options;
+-}
++}
+\ No newline at end of file

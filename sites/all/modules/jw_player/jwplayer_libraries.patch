@@ -1,0 +1,125 @@
+diff --git a/README.txt b/README.txt
+index f0a9f69..63fc7d2 100644
+--- a/README.txt
++++ b/README.txt
+@@ -12,7 +12,8 @@ Bug reports, feature suggestions and latest developments:
+ 
+ -- REQUIREMENTS --
+ 
+-* This module depends on the File module, which is part of Drupal core.
++* This module depends on the File module, which is part of Drupal core as well
++  as the Libraries module (http://drupal.org/project/libraries).
+ 
+ 
+ -- INSTALLATION --
+@@ -20,9 +21,9 @@ Bug reports, feature suggestions and latest developments:
+ * Download either the latest commercial or the latest non-commercial JW
+   Player at http://www.longtailvideo.com/players/jw-flv-player/.
+ 
+-* Extract the zip file and put the contents of the extracted folder in the
+-  mediaplayer directory of this module. 
+-  E.g.: sites/all/modules/contrib/jw_player_mediaplayer.
++* Extract the zip file and put the contents of the extracted folder in
++  libraries/jwplayer. 
++  E.g.: sites/all/libraries/jwplayer or sites/<sitename>/libraries/jwplayer
+ 	
+ * Install this module as described at http://drupal.org/node/895232.
+ 
+diff --git a/jw_player.info b/jw_player.info
+index c6aec4f..91bf92c 100755
+--- a/jw_player.info
++++ b/jw_player.info
+@@ -4,5 +4,6 @@ description = Adds a theme function which allows theme developers to use the JW
+ version = VERSION
+ core = 7.x
+ dependencies[] = image
++dependencies[] = libraries
+ files[] = jw_player.module
+ files[] = jw_player.theme.inc
+\ No newline at end of file
+diff --git a/jw_player.install b/jw_player.install
+index 17ffb5a..24faabe 100755
+--- a/jw_player.install
++++ b/jw_player.install
+@@ -52,14 +52,13 @@ function jw_player_requirements($phase) {
+   // Ensure translations don't break at install time
+   $t = get_t();
+ 
+-  $path = drupal_get_path('module', 'jw_player');
++  $directory = libraries_get_path('jwplayer');
+ 
+   // Check the exisence of the JW Player Library
+   if ($phase == 'runtime') {
+     $errors = array();
+ 
+     foreach (array('player.swf', 'jwplayer.js') as $file) {
+-      $directory = $path . '/mediaplayer';
+       if (!file_exists($directory . '/' . $file)) {
+         $errors[] = $t('The file %file is not present in the directory %directory', array('%file' => $file, '%directory' => $directory));
+       }
+diff --git a/jw_player.make.example b/jw_player.make.example
+new file mode 100644
+index 0000000..9dfbf85
+--- /dev/null
++++ b/jw_player.make.example
+@@ -0,0 +1,14 @@
++; Example Make file to demonstrate how to automatically fetch JW Player.
++; See http://davehall.com.au/blog/dave/2011/05/17/drush-make-and-module-dependencies#comment-2261
++; as to why this file ends with .example rather than .make.
++libraries[jwplayer][download][type] = "get"
++libraries[jwplayer][download][url] = "http://www.longtailvideo.com/jw/upload/mediaplayer.zip"
++libraries[jwplayer][directory_name] = "jwplayer"
++
++libraries[jwplayer_skin_modieus][download][type] = "get"
++libraries[jwplayer_skin_modieus][download][url] = "http://www.longtailvideo.com/files/skins/modieus/5/modieus.zip"
++libraries[jwplayer_skin_modieus][directory_name] = "jwplayer_skins/modieus"
++
++libraries[jwplayer_skin_snel][download][type] = "get"
++libraries[jwplayer_skin_snel][download][url] = "http://www.longtailvideo.com/files/skins/snel/5/snel.zip"
++libraries[jwplayer_skin_snel][directory_name] = "jwplayer_skins/snel"
+\ No newline at end of file
+diff --git a/jw_player.module b/jw_player.module
+index dbedb62..2c7d55c 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -667,7 +667,7 @@ function jw_player_skins($name = NULL) {
+   $skins = &drupal_static(__FUNCTION__);
+ 
+   if (!isset($skins)) {
+-    $directory = drupal_get_path('module', 'jw_player') .'/skins';
++    $directory = libraries_get_path('jwplayer_skins');
+     $skins = file_scan_directory($directory, '/\.xml|\.swf$/');
+   }
+ 
+diff --git a/jw_player.theme.inc b/jw_player.theme.inc
+index 1521fc7..806cb45 100755
+--- a/jw_player.theme.inc
++++ b/jw_player.theme.inc
+@@ -61,11 +61,11 @@ function theme_jw_player_formatter($variables) {
+ 
+   // Get the image dimensions. These will overwrite the dimensions of the player if they aren't set
+   $info = image_get_info($preview_image->uri);
+-  $path = drupal_get_path('module', 'jw_player');
++  $path = libraries_get_path('jwplayer');
+ 
+   $config = array(
+     'id' => 'jw_player_' . $file->fid,
+-    'flashplayer' => file_create_url($path . '/mediaplayer/player.swf'),
++    'flashplayer' => file_create_url($path . '/player.swf'),
+     'width' => (isset($variables['width']) ? $variables['width'] : $info['width']),
+     'height' => (isset($variables['height']) ? $variables['height'] : $info['height']),
+     'file' => file_create_url($file->uri),
+@@ -96,10 +96,10 @@ function theme_jw_player($variables) {
+ 
+   $output = '<div id="' . $config['id'] . '"></div>';
+ 
+-  $path = drupal_get_path('module', 'jw_player');
++  $path = libraries_get_path('jwplayer');
+ 
+-  drupal_add_js($path . '/mediaplayer/jwplayer.js');
+-  drupal_add_js($path . '/jw_player.js');
++  drupal_add_js($path . '/jwplayer.js');
++  drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
+   drupal_add_js(array('jw_player' => array($config['id'] => $config)), 'setting');
+ 
+   return $output;

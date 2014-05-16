@@ -1,0 +1,14 @@
+diff --git a/jw_player.module b/jw_player.module
+index 449f3fd..e71bb89 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -440,6 +440,9 @@ function jw_player_process_jw_player(&$variables) {
+  */
+ function jw_player_init() {
+   // Add key if available.
++  drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js');
++  drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player_seek.js');
++
+   if ($key = variable_get('jw_player_key', NULL)) {
+     drupal_add_js('jwplayer.key="' . $key . '"',
+     array('type' => 'inline', 'scope' => 'header', 'weight' => 5)

@@ -1,0 +1,9 @@
+name = bClean Real Estate
+description = Clean real estate listing theme and module.
+version = VERSION
+core = 7.x
+dependencies[] = block
+dependencies[] = rlisting
+dependencies[] = blog
+dependencies[] = comment
+files[] = bclean.profile

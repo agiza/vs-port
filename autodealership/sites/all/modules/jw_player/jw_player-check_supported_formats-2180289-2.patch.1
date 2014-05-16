@@ -1,0 +1,231 @@
+From 280c94fc2835098abefdc160dfee40b89bb75485 Mon Sep 17 00:00:00 2001
+From: Pierre Buyle <buyle@pheromone.ca>
+Date: Thu, 30 Jan 2014 09:18:02 -0500
+Subject: [PATCH] Issue #2180289: Avoid displaying a player for non-supported
+ container/video/audio formats.
+
+---
+ checks/php_ffmpeg.inc |   37 ++++++++++++++++++++
+ jw_player.api.php     |   15 ++++++++
+ jw_player.module      |   93 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 143 insertions(+), 2 deletions(-)
+ create mode 100644 checks/php_ffmpeg.inc
+
+diff --git a/checks/php_ffmpeg.inc b/checks/php_ffmpeg.inc
+new file mode 100644
+index 0000000..4224bd4
+--- /dev/null
++++ b/checks/php_ffmpeg.inc
+@@ -0,0 +1,37 @@
++<?php
++/**
++ * Implements hook_jw_player_supports().
++ */
++function php_ffmpeg_jw_player_supports($file) {
++  // Only works on local file.
++  $scheme = file_uri_scheme($file->uri);
++  $wrappers = file_get_stream_wrappers(STREAM_WRAPPERS_LOCAL);
++  if (!empty($wrappers[$scheme]) && empty($wrappers[$scheme]['remote'])) {
++    try {
++      if ($streams = php_ffmpeg_probe()->streams(drupal_realpath($file->uri))) {
++        $supported_video_codecs = variable_get('php_ffmpeg_jw_player_video_codecs', array('h264', 'h263', 'vp8'));
++        $supported_audio_codecs = variable_get('php_ffmpeg_jw_player_audio_codecs', array('aac', 'mp3','vorbis'));
++        // Assume video/audio is supported if the file has no video/audio stream.
++        $video_supported = !$streams->videos()->count();
++        $audio_supported = !$streams->audios()->count();
++        // Search for a supported audio and video streams.
++        $stream_iterator = $streams->getIterator();
++        $stream = reset($stream_iterator);
++        while (!($video_supported  && $audio_supported) && $stream) {
++          if ($stream->isVideo() && !$video_supported) {
++            $video_supported = $stream->has('codec_name') && in_array($stream->get('codec_name'), $supported_video_codecs);
++          }
++          if ($stream->isAudio() && !$audio_supported) {
++            $audio_supported = $stream->has('codec_name') && in_array($stream->get('codec_name'), $supported_audio_codecs);
++          }
++          $stream = next($stream_iterator);
++        }
++        return  $video_supported && $audio_supported;
++      }
++    }
++    catch (Exception $e) {
++      watchdog('jw_player', 'Error while probing @uri, check php_ffmpeg log.', array('@uri' => $file->uri), WATCHDOG_ERROR);
++    }
++  }
++  return FALSE;
++}
+\ No newline at end of file
+diff --git a/jw_player.api.php b/jw_player.api.php
+index 6caba40..e31f109 100644
+--- a/jw_player.api.php
++++ b/jw_player.api.php
+@@ -33,4 +33,19 @@ function hook_jw_player_plugin_info($preset) {
+     ),
+   );
+   return $plugins;
++}
++/**
++ * Checks a file for JW Player supported media formats.
++ *
++ * This hook allow third party module to provide media formats verification for
++ * video and audio streams inside a JW Player formatted file.
++ *
++ * @param array|object $file
++ *   A file object (or array) to check for support.
++ *
++ * @return bool
++ *   TRUE if the file is supported by JW Player.
++ */
++function hook_jw_player_supports($file) {
++
+ }
+\ No newline at end of file
+diff --git a/jw_player.module b/jw_player.module
+index 2ceb89d..3ac2f25 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -63,6 +63,7 @@ function jw_player_field_formatter_info() {
+       'field types' => array('file'),
+       'settings' => array(
+         'jwplayer_preset' => '',
++        'check_support' => FALSE,
+       ),
+     ),
+     
+@@ -71,6 +72,7 @@ function jw_player_field_formatter_info() {
+       'field types' => array('file'),
+       'settings' => array(
+         'jwplayer_preset' => '',
++        'check_support' => FALSE,
+       ),
+     ),
+     
+@@ -79,6 +81,7 @@ function jw_player_field_formatter_info() {
+       'field types' => array('file'),
+       'settings' => array(
+         'jwplayer_preset' => '',
++        'check_support' => FALSE,
+       ),
+     ),
+   );
+@@ -127,6 +130,12 @@ function jw_player_field_formatter_settings_form($field, $instance, $view_mode,
+             ),
+           ),
+         );
++        $element['check_support'] = array(
++          '#title' => t('Check Media Support'),
++          '#description' => t('Enable verification of JW Player media support in formatted file. If the file does no contain supported media formats, no player is displayed.'),
++          '#type' => 'checkbox',
++          '#default_value' => !empty($settings['check_support']),
++        );
+       }
+       else {
+         $element['no_preset_message'] = array(
+@@ -171,16 +180,19 @@ function jw_player_field_formatter_settings_summary($field, $instance, $view_mod
+   return implode('<br />', $summary);
+ }
+ 
++
+ /**
+  * Implements hook_field_formatter_view().
+  */
+ function jw_player_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+   $element = array();
+-
++  // Exclude files without a supported media format (if enabled).
++  if (!empty($display['settings']['check_support'])) {
++    $items = array_filter($items, 'jw_player_supports');
++  }
+   if ($display['type'] == 'jw_player') {
+     // Process files for the theme function.
+     foreach ($items as $delta => $item) {
+-     
+       // Give each instance of the player a unique id. The combination
+       // of fid and preset are considered to be save even in cases where
+       // the entire theme functions output is cached.
+@@ -470,4 +482,81 @@ function jw_player_preset_plugins($name = NULL) {
+   }
+ 
+   return $plugins;
++}
++
++function jw_player_supported_mimetypes() {
++  $types = &drupal_static(__FUNCTION__);
++  if (!$types) {
++    $types = array(
++      // Container format listed on http://www.longtailvideo.com/support/jw-player/28836/media-format-support
++      // MP4 (video)
++      'video/mp4',
++      // FLV (video)
++      'video/flv',
++      // WebM (video)
++      'video/webm',
++      // AAC (audio)
++      'audio/aac', 'audio/aacp', 'audio/3gpp', 'audio/3gpp2', 'audio/mp4', 'audio/MP4A-LATM', 'audio/mpeg4-generic',
++      // MP3 (audio)
++      'audio/mpeg', 'audio/MPA', 'audio/mpa-robust',
++      // Other container formats.
++      // Vorbis (video)
++      'video/ogg',
++      // Quicktime (video)
++      'video/quicktime',
++      // Matroska (audio and video)
++      'video/x-matroska', 'audio/x-matroska',
++      // WebM (audio)
++      'audio/webm',
++      // Vorbis (audio)
++      'audio/ogg',
++    );
++    drupal_alter('jw_player_supported_mimetypes', $types);
++  }
++  return $types;
++}
++
++/**
++ * Checks a file for JW Player supported media formats.
++ *
++ * See http://www.longtailvideo.com/support/jw-player/28836/media-format-support
++ * for the list of supported media formats.
++ *
++ * @param array|object $file
++ *   A file object (or array) to check for support.
++ *
++ * @return bool
++ *   TRUE if the file is supported by JW Player.
++ */
++function jw_player_supports($file) {
++  $file = (object)$file;
++  if (in_array($file->filemime, jw_player_supported_mimetypes())) {
++    //Loads on-behalf implementations from checks/ directory.
++    $path = drupal_get_path('module', 'jw_player') . '/checks';
++    $files = drupal_system_listing('/.*\.inc$/', $path, 'name', 0);
++    foreach ($files as $check_file) {
++      if (strstr($check_file->uri, '/checks/') && module_exists($check_file->name)) {
++        require_once(DRUPAL_ROOT . '/' . $check_file->uri);
++      }
++    }
++    if ($check_modules = module_implements('jw_player_supports')) {
++      // Return TRUE as soon as an implementation of hook_jw_player_supports()
++      // returns TRUE.
++      foreach ($check_modules as $module) {
++        if (module_invoke($module, 'jw_player_supports', $file)) {
++          return TRUE;
++        }
++      }
++      // Return FALSE if no implementation of hook_jw_player_supports() returned
++      // TRUE.
++      return FALSE;
++    }
++    else {
++      // Return TRUE if no module implements hook_jw_player_supports().
++      return TRUE;
++    }
++  }
++  else {
++    return FALSE;
++  }
+ }
+\ No newline at end of file
+-- 
+1.7.10.4
+

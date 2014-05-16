@@ -1,0 +1,149 @@
+<?php
+
+/**
+ * @file
+ *  Adds the Google Interactive Media Ads plugin to JW player.
+ *  More info at http://www.longtailvideo.com/adnetworks/plugins/googima.
+ *
+ * @see http://drupal.org/node/1338964 - implementing plugins.
+ */
+
+/**
+ * Implements hook_jw_player_plugin_info().
+ *
+ * Register a jw_player preset plugin.
+ */
+function jw_player_googima_jw_player_plugin_info() {
+  // Create the types array.
+  $type_options = array(
+    'audio' => 'audio (Flash Only)',
+    'full_slot' => 'full_slot (Flash Only)',
+    'graphical' => 'graphical (Flash Only)',
+    'graphical_full_slot' => 'graphical_full_slot (Flash Only)',
+    'graphical_overlay' => 'graphical_overlay (Flash Only)',
+    'overlay' => 'overlay',
+    'text_full_slot' => 'text_full_slot(Flash Only)',
+    'text_or_graphical' => 'text_or_graphical(Flash Only)',
+    'text_overlay' => 'text_overlay(Flash Only)',
+    'video' => 'video',
+  );
+
+  // Create the position array.
+  $position_options = array(
+    'pre' => 'pre: Ad appears before the first video in the playlist',
+    'post' => 'post: Ad appears after the last video in the playlist',
+  );
+
+  // Create the ad config.
+  // @todo make this a dynamic 'Add More' AJAX call.
+  $config_options = array(
+    'allowadskip' => array(
+      '#title' => t('Allow Skip'),
+      '#type' => 'select',
+      '#options' => array('false' => 'false', 'true' => 'true'),
+      '#default_value' => 'false',
+      '#required' => FALSE,
+      '#description' => t('Toggles the ability to exit ads during playback by clicking a close button. Defaults to false (do not allow ad skip).')
+    )
+  );
+  for ($i=1; $i<6; $i++) {
+    $config_options['myad_' . $i] = array(
+      '#type' => 'fieldset',
+      '#title' => check_plain('Advert ' . $i),
+      '#tree' => TRUE,
+      '#weight' => $i,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'publisher' => array(
+        '#title' => t('Publisher'),
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#size' => 512,
+        '#maxlength' => 512,
+        '#description' => t('This parameter is for the AFV publisherId.'),
+      ),
+      'tag' => array(
+        '#title' => t('Tag'),
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#size' => 512,
+        '#maxlength' => 512,
+        '#element_validate' => array('token_element_validate'),
+        '#after_build' => array('token_element_validate'),
+        '#token_types' => array('node'),
+        '#min_tokens' => 0,
+        '#description' => t('This parameter describes the desired ad tag. This field supports the use of tokens. e.g. http://ad.doubleclick.net/pfadx/[term:term_name]/;sz=320x240;tile=1')
+      ),
+      'type' => array(
+        '#title' => t('Type'),
+        '#type' => 'select',
+        '#options' => $type_options,
+        '#required' => FALSE,
+        '#description' => t('This parameter describes the desired ad type.')
+      ),
+      'position' => array(
+        '#title' => t('Position'),
+        '#type' => 'select',
+        '#options' => $position_options,
+        '#required' => FALSE,
+        '#description' => t('This parameter describes the desired ad type.')
+      ),
+    );
+  }
+
+  $config_options['token_help'] = array(
+    '#title' => t('Replacement patterns'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    'help' => array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('node')
+    ),
+  );
+
+  $plugins['googima'] = array(
+    'name' => t('Google Interactive Media Ads'),
+    'description' => t('Google Interactive Media Ads plugin for HTML5 JW player'),
+    'config options' => $config_options,
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements template_preprocess_jw_player().
+ *
+ * If no embed link is set, set default.
+ */
+function jw_player_googima_preprocess_jw_player(&$variables) {
+  // Disable Googima on Youtube videos
+  if (isset($variables['file_object']->filemime) && $variables['file_object']->filemime == 'video/youtube') {
+    unset($variables['plugins']['googima']);
+    unset($variables['config']['plugins']['googima']);
+  }
+
+  // Check the plugin is enabled.
+  if (isset($variables['plugins']['googima']['enable']) && $variables['plugins']['googima']['enable'] == 1) {
+    // Strip out ads that are not configured with a tag and type.
+    for ($i=1; $i<6; $i++) {
+      if (!empty($variables['plugins']['googima']['myad_' . $i]['tag']) || !empty($variables['plugins']['googima']['myad_' . $i]['publisher'])) {
+        // Add in the 'ad' part of the config.
+        $variables['plugins']['googima']['ad']['myad_' . $i] = $variables['plugins']['googima']['myad_' . $i];
+        $variables['config']['plugins']['googima']['ad']['myad_' . $i] = $variables['config']['plugins']['googima']['myad_' . $i];
+        // Attempt to replace any tokens
+        $data = array('node' => menu_get_object('node'));
+        $options = array('clear' => TRUE);
+        $variables['config']['plugins']['googima']['ad']['myad_' . $i]['tag'] = token_replace($variables['config']['plugins']['googima']['ad']['myad_' . $i]['tag'], $data, $options);
+      }
+      // Remove original entry. All vaild ads were added to the 'ad' array above.
+      unset($variables['plugins']['googima']['myad_' . $i]);
+      unset($variables['config']['plugins']['googima']['myad_' . $i]);
+    }
+    // Change googima for http://lp.longtailvideo.com/5/googima/googima.js as just calling googima as the plugin name doesn't work!
+    $variables['plugins']['http://lp.longtailvideo.com/5/googima/googima.js'] = $variables['plugins']['googima'];
+    $variables['config']['plugins']['http://lp.longtailvideo.com/5/googima/googima.js'] = $variables['config']['plugins']['googima'];
+    unset($variables['plugins']['googima']);
+    unset($variables['config']['plugins']['googima']);
+  }
+}

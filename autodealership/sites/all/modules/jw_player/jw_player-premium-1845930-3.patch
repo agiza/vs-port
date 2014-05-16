@@ -1,0 +1,53 @@
+diff --git a/jw_player.admin.inc b/jw_player.admin.inc
+index 84fde21..de62218 100644
+--- a/jw_player.admin.inc
++++ b/jw_player.admin.inc
+@@ -19,5 +19,11 @@ function jw_player_settings_form($form) {
+     '#default_value' => variable_get('jw_player_inline_js', TRUE),
+   );
+ 
++  $form['jw_player_key'] = array(
++    '#type' => 'textfield',
++    '#title' => t('Licence key'),
++    '#description' => t('If you have a premium account enter your key here'),
++    '#default_value' => variable_get('jw_player_key', NULL),
++  );
+   return system_settings_form($form);
+ }
+\ No newline at end of file
+diff --git a/jw_player.module b/jw_player.module
+index 1883228..4d5964f 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -434,6 +434,14 @@ function jw_player_process_jw_player(&$variables) {
+     // Attaches JW Player element.
+     drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
+     drupal_add_js(array('jw_player' => array($variables['html_id'] => $variables['config'])), 'setting'); // Player settings
++
++    // Add key if available.
++    // @todo: Is added multiple times if there are multiple players on one page.
++    if ($key = variable_get('jw_player_key', NULL)) {
++      drupal_add_js('jwplayer.key="' . $key . '"',
++        array('type' => 'inline', 'scope' => 'header', 'weight' => 5)
++      );
++    }
+   }
+ }
+ 
+@@ -446,7 +454,15 @@ function jw_player_process_jw_player(&$variables) {
+  */
+ function jw_player_init() {
+   if (variable_get('jw_player_inline_js', FALSE)) {
+-    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js'); // Add library
++    // Add library
++    drupal_add_js(libraries_get_path('jwplayer') . '/jwplayer.js');
++
++    // Add key if available.
++    if ($key = variable_get('jw_player_key', NULL)) {
++      drupal_add_js('jwplayer.key="' . $key . '"',
++        array('type' => 'inline', 'scope' => 'header', 'weight' => 5)
++      );
++    }
+   }
+ }
+ 

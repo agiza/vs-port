@@ -1,0 +1,205 @@
+From f36885bbc8645a067958c5fd21e92d47c3106e01 Mon Sep 17 00:00:00 2001
+From: Jorrit Schippers <jorrit@161217.no-reply.drupal.org>
+Date: Fri, 4 Jan 2013 17:46:20 +0100
+Subject: [PATCH] Issue #1395584 by Jorrit: Added settings to the formatter to
+ allow selecting an image field and style to be used for the
+ poster of the video.
+
+---
+ jw_player.module |  126 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 123 insertions(+), 3 deletions(-)
+
+diff --git a/jw_player.module b/jw_player.module
+index b632759..5901e4f 100644
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -62,6 +62,8 @@ function jw_player_field_formatter_info() {
+       'field types' => array('file'),
+       'settings' => array(
+         'jwplayer_preset' => '',
++        'posterimage_field' => NULL,
++        'posterimage_style' => NULL,
+       ),
+     ),
+   );
+@@ -114,6 +116,30 @@ function jw_player_field_formatter_settings_form($field, $instance, $view_mode,
+           '#markup' => '<div class="messages warning">' . t('No presets are available. You must to <a href="@create">create a preset</a> to proceed.', array('@create' => url('admin/config/media/jw_player/add'))) . '</div>',
+         );
+       }
++
++      // Poster field handling.
++      $imagefields = _jw_player_find_image_fields($field, $instance['entity_type'], $instance['bundle']);
++      if (!empty($imagefields)) {
++        $image_styles = image_style_options(FALSE);
++        $element['posterimage_field'] = array(
++          '#type' => 'select',
++          '#title' => t('Poster image field'),
++          '#default_value' => $settings['posterimage_field'],
++          '#options' => $imagefields,
++          '#description' => t('If an image is uploaded to the field above it will be used as the poster image.'),
++          '#empty_value' => NULL,
++          '#empty_option' => t('- None -'),
++        );
++
++        $element['posterimage_style'] = array(
++          '#title' => t('Poster image style'),
++          '#type' => 'select',
++          '#default_value' => $settings['posterimage_style'],
++          '#empty_option' => t('None (original image)'),
++          '#description' => t('The original video thumbnail will be displayed. Otherwise, you can add a custom image style at <a href="@settings-url">media image styles</a>.', array('@settings-url' => url('admin/config/media/image-styles'))),
++          '#options' => $image_styles,
++        );
++      }
+       break;
+ 
+     default:
+@@ -123,6 +149,66 @@ function jw_player_field_formatter_settings_form($field, $instance, $view_mode,
+ }
+ 
+ /**
++ * Finds image fields in the given entity and bundle.
++ *
++ * @param $field
++ *   Field definition of the video field, used to match image fields when
++ *   this field is rendered using Views.
++ * @param $entity_type
++ *   Entity type in which the image field must occur.
++ * @param $bundle
++ *   Bundle in which the image field must occur.
++ * @return
++ *   Array of image field names.
++ */
++function _jw_player_find_image_fields($field, $entity_type, $bundle) {
++  $imagefields = array();
++
++  // Determine the image fields that will be selectable.
++  if ($entity_type == 'ctools' && $bundle == 'ctools') {
++    // This is a fake instance (see ctools_fields_fake_field_instance()).
++    // This occurs for instance when this formatter is used in Views.
++    // Display all image fields in bundles that contain this field.
++    $otherfields = field_info_fields();
++    foreach ($otherfields as $otherfield) {
++      if ($otherfield['type'] == 'image' && !empty($otherfield['bundles'])) {
++        // Find a label by finding an instance label
++        $instancelabels = array();
++        $bundles_names = array();
++
++        foreach ($otherfield['bundles'] as $otherentitytype => $otherbundles) {
++          foreach ($otherbundles as $otherbundle) {
++            // Check if this image field appears in one of the video field bundles.
++            if (isset($field['bundles'][$otherentitytype]) && in_array($otherbundle, $field['bundles'][$otherentitytype])) {
++              $otherinstance = field_info_instance($otherentitytype, $otherfield['field_name'], $otherbundle);
++              $instancelabels[$otherinstance['label']] = isset($instancelabels[$otherinstance['label']]) ? $instancelabels[$otherinstance['label']] + 1 : 1;
++              $bundles_names[] = t('@entity:@bundle', array('@entity' => $otherentitytype, '@bundle' => $otherbundle));
++            }
++          }
++        }
++
++        if (!empty($instancelabels)) {
++          arsort($instancelabels);
++          $instancelabel = key($instancelabels);
++          $imagefields[$otherfield['field_name']] = $instancelabel . ' — ' . t('Appears in: @bundles.', array('@bundles' => implode(', ', $bundles_names)));
++        }
++      }
++    }
++  }
++  else {
++    $otherinstances = field_info_instances($entity_type, $bundle);
++    foreach ($otherinstances as $otherinstance) {
++      $otherfield = field_info_field_by_id($otherinstance['field_id']);
++      if ($otherfield['type'] == 'image') {
++        $imagefields[$otherinstance['field_name']] = $otherinstance['label'];
++      }
++    }
++  }
++
++  return $imagefields;
++}
++
++/**
+  * Implements hook_field_formatter_settings_summary().
+  */
+ function jw_player_field_formatter_settings_summary($field, $instance, $view_mode) {
+@@ -136,8 +222,8 @@ function jw_player_field_formatter_settings_summary($field, $instance, $view_mod
+     $summary[] = t('Preset: @name', array('@name' => $presets[$settings['jwplayer_preset']]['preset_name']));
+     $summary[] = t('Description: @description', array('@description' => $presets[$settings['jwplayer_preset']]['description']));
+ 
+-    $settings = $presets[$settings['jwplayer_preset']]['settings'];
+-    foreach ($settings as $key => $val) {
++    $presetsettings = $presets[$settings['jwplayer_preset']]['settings'];
++    foreach ($presetsettings as $key => $val) {
+       // Filter out complex settings in the form of arrays (such as plugins).
+       // @todo Tackle the display of enabled plugins separately.
+       if (!is_array($val)) {
+@@ -149,6 +235,21 @@ function jw_player_field_formatter_settings_summary($field, $instance, $view_mod
+     $summary[] = t('No preset selected');
+   }
+ 
++  if (!empty($settings['posterimage_field'])) {
++    $imageinstance = field_info_instance($instance['entity_type'], $settings['posterimage_field'], $instance['bundle']);
++    if ($imageinstance != NULL) {
++      $summary[] = t('Poster image field: @field-label', array('@field-label' => $imageinstance['label']));
++    }
++  }
++
++  $image_styles = image_style_options(FALSE);
++  if (isset($image_styles[$settings['posterimage_style']])) {
++    $summary[] = t('Poster image style: @style-name', array('@style-name' => $image_styles[$settings['posterimage_style']]));
++  }
++  else {
++    $summary[] = t('Poster image style: @style-name', array('@style-name' => t('None')));
++  }
++
+   return implode('<br />', $summary);
+ }
+ 
+@@ -156,6 +257,8 @@ function jw_player_field_formatter_settings_summary($field, $instance, $view_mod
+  * Implements hook_field_formatter_view().
+  */
+ function jw_player_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
++  $settings = $display['settings'];
++
+   $element = array();
+ 
+   if ($display['type'] == 'jw_player') {
+@@ -164,6 +267,22 @@ function jw_player_field_formatter_view($entity_type, $entity, $field, $instance
+     foreach ($items as $delta => $item) {
+       $files[$delta] = (object) $item;
+     }
++
++    // Add the poster image.
++    $image = NULL;
++    if (!empty($settings['posterimage_field']) && !empty($entity->{$settings['posterimage_field']})) {
++      $images = field_get_items($entity_type, $entity, $settings['posterimage_field']);
++
++      if (!empty($images) && $imagefile = array_shift($images)) {
++        if (empty($settings['posterimage_style'])) {
++          $image = file_create_url($imagefile['uri']);
++        }
++        else {
++          $image = image_style_url($settings['posterimage_style'], $imagefile['uri']);
++        }
++      }
++    }
++
+     foreach ($files as $delta => $file) {
+       // Give each instance of the player a unique id. The combination
+       // of fid and preset are considered to be save even in cases where
+@@ -176,6 +295,7 @@ function jw_player_field_formatter_view($entity_type, $entity, $field, $instance
+         '#file_object' => $file,
+         '#preset' => $display['settings']['jwplayer_preset'],
+         '#html_id' => drupal_html_id('jwplayer' . $id),
++        '#image' => $image,
+       );
+     }
+   }
+@@ -507,4 +627,4 @@ function jw_player_preset_plugins($name = NULL) {
+   }
+ 
+   return $plugins;
+-}
+\ No newline at end of file
++}
+-- 
+1.7.10.4
+

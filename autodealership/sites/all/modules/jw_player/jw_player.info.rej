@@ -1,0 +1,9 @@
+--- jw_player.info
++++ jw_player.info
+@@ -4,5 +4,6 @@
+ version = VERSION
+ core = 7.x
+ dependencies[] = image
++dependencies[] = libraries
+ files[] = jw_player.module
+ files[] = jw_player.theme.inc

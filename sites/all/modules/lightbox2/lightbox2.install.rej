@@ -1,0 +1,10 @@
+--- lightbox2.install 25 Aug 2008 14:08:53 -0000 1.1.4.5.2.33
++++ lightbox2.install 5 Sep 2008 14:32:54 -0000
+@@ -32,6 +32,7 @@
+   variable_del('lightbox2_disable_zoom');
+   variable_del('lightbox2_enable_login');
+   variable_del('lightbox2_enable_video');
++  variable_del('lightbox2_flv_player_path');
+   variable_del('lightbox2_page_init_action');
+   variable_del('lightbox2_page_list');
+   variable_del('lightbox2_disable_these_urls');

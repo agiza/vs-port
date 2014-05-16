@@ -1,0 +1,30 @@
+diff --git a/jw_player.module b/jw_player.module
+index c3264f7..b0b6cd0 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -262,6 +262,15 @@ function jw_player_preprocess_jw_player(&$variables) {
+     if (empty($variables['file_mime'])) {
+       $variables['file_mime'] = $variables['file_object']->filemime;
+     }
++    if (!empty($variables['file_object']->image)){
++      $image = $variables['file_object']->image;
++      if (!empty($image['url'])){
++        $variables['image_url'] = $image['url'];
++      }
++      elseif (!empty($image['uri'])){
++        $variables['image_url'] = file_create_url($image['uri']);
++      }
++    }
+   }
+ 
+   $player_path = libraries_get_path('jwplayer');
+@@ -296,6 +305,9 @@ function jw_player_preprocess_jw_player(&$variables) {
+ 
+   // Create a configuration array which will be passed to JWPlayer's JavaScript.
+   $variables['config']['file'] = $variables['file_url'];
++  
++  // Add image url if it is available
++  $variables['config']['image'] = !empty($variables['image_url']) ? $variables['image_url'] : '';
+ 
+   // Resolve skin url
+   $skin = !empty($variables['skin']) ? jw_player_skins($variables['skin']) : '';

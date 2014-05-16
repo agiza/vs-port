@@ -1,0 +1,78 @@
+diff --git a/jw_player.module b/jw_player.module
+index 7f89126..f7fd1e0 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -317,14 +317,9 @@ function jw_player_preprocess_jw_player(&$variables) {
+     ),
+   );
+ 
+-  // Copy over all enabled plugins into the 'config' section as this is the key that is sent over to the player
+-  if (!empty($variables['plugins'])) {
+-    foreach ($variables['plugins'] as $plugin => $info) {
+-      if (!$info['enable']) {
+-        continue;
+-      }
+-      $variables['config']['plugins'][$plugin] = $info;
+-    }
++  // Sanitise the plugins and copy them over to 'config' as that would form part of the script
++  if (!empty($variables['plugins']) && ($available_plugins = jw_player_sanitise_preset_plugins($variables['plugins']))) {
++    $variables['config']['plugins'] = $available_plugins;
+   }
+ 
+   // If inline option is selected, add the js code inline. It will be printed
+@@ -336,9 +331,12 @@ function jw_player_preprocess_jw_player(&$variables) {
+   }
+   // If inline is not selected, add all relevant Javascript now.
+   else {
+-    drupal_add_js($player_path . '/jwplayer.js'); // Add library
+-    drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js'); // Attaches JW Player element
+-    drupal_add_js(array('jw_player' => array($variables['html_id'] => $variables['config'])), 'setting'); // Player settings
++    // Add library
++    drupal_add_js($player_path . '/jwplayer.js');
++    // Attaches JW Player element
++    drupal_add_js(drupal_get_path('module', 'jw_player') . '/jw_player.js');
++    // Player settings
++    drupal_add_js(array('jw_player' => array($variables['html_id'] => $variables['config'])), 'setting');
+   }
+ }
+ 
+@@ -352,7 +350,8 @@ function jw_player_preprocess_jw_player(&$variables) {
+ function jw_player_init(){
+   if (variable_get('jw_player_inline_js', FALSE)) {
+     $player_path = libraries_get_path('jwplayer');
+-    drupal_add_js($player_path . '/jwplayer.js'); // Add library
++    // Add library
++    drupal_add_js($player_path . '/jwplayer.js');
+   }
+ }
+ 
+@@ -373,4 +372,28 @@ function jw_player_preset_plugins($name = NULL) {
+   }
+ 
+   return $plugins;
++}
++
++/**
++ * Sanitise preset plugins by removing 'un-available' plugins.
++ *
++ * A plugin is 'un-available' if:
++ *  a. The module providing it has been disabled, or
++ *  b. The plugin has been set disabled in the preset
++ *
++ * @param $preset_plugins Associative array of preset plugins keyed by the plugin name
++ *
++ * @return Associative array of available plugins, if any. Null otherwise.
++ */
++function jw_player_sanitise_preset_plugins($preset_plugins) {
++  $return = NULL;
++  if ($plugins_available = array_intersect($preset_plugins, jw_player_preset_plugins())) {
++    foreach ($plugins_available as $plugin => $info) {
++      if (!$info['enable']) {
++        continue;
++      }
++      $return[$plugin] = $plugins_available[$plugin];
++    }
++  }
++  return $return;
+ }
+\ No newline at end of file

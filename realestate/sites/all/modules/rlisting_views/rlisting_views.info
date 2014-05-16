@@ -1,0 +1,5 @@
+name = rlisting_views export module
+description = Export objects from CTools
+dependencies[] = views
+package = rListing
+core = 7.x

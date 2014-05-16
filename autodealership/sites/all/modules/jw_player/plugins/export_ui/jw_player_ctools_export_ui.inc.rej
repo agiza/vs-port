@@ -1,0 +1,26 @@
+--- plugins/export_ui/jw_player_ctools_export_ui.inc
++++ plugins/export_ui/jw_player_ctools_export_ui.inc
+@@ -202,17 +230,17 @@
+     '#options' => $skin_options,
+   );
+   
+-  $form['settings']['stretching'] = array(
+-    '#title' => t('Stretching'),
+-    '#description' => t('How to resize the poster and video to fit the display.'),
+-    '#type' => 'select',
+-    '#default_value' => !empty($settings['skin']) ? $settings['skin']: 'uniform',
++  $form['settings']['stretching'] = array(
++    '#title' => t('Stretching'),
++    '#description' => t('How to resize the poster and video to fit the display.'),
++    '#type' => 'select',
++    '#default_value' => !empty($settings['skin']) ? $settings['skin']: 'uniform',
+     '#options' => array(
+       'none' => t('None (keep original dimensions)'),
+       'exactfit' => t(' Exact Fit (stretch disproportionally)'),
+       'uniform' => t('Uniform (stretch proportionally; black borders)'),
+       'fill' => t('Fill (stretch proportionally; parts cut off)'),
+-      ),
++      ),
+   );
+ 
+   // Add preset plugin settings.

@@ -1,0 +1,36 @@
+diff --git a/jw_player.module b/jw_player.module
+index 5e6ccb5..550a256 100755
+--- a/jw_player.module
++++ b/jw_player.module
+@@ -335,6 +335,13 @@ function jw_player_preprocess_jw_player(&$variables) {
+     ),
+   );
+ 
++  // Add a download fallback if the preset is configured to do so.
++  if (!empty($variables['download_mode'])) {
++    $variables['config']['modes'][] = array(
++      'type' => 'download',
++    );
++  }
++
+   // If the preset has the primary mode set, modify the modes array so that it
+   // comes first.
+   if (isset($variables['mode'])) {
+diff --git a/plugins/export_ui/jw_player_ctools_export_ui.inc b/plugins/export_ui/jw_player_ctools_export_ui.inc
+index a74d815..753a59d 100755
+--- a/plugins/export_ui/jw_player_ctools_export_ui.inc
++++ b/plugins/export_ui/jw_player_ctools_export_ui.inc
+@@ -89,6 +89,13 @@ function jw_player_ctools_export_ui_form(&$form, &$form_state) {
+     '#default_value' => isset($settings['mode']) ? $settings['mode'] : 'html5',
+   );
+ 
++  $form['settings']['download_mode'] = array(
++    '#type' => 'checkbox',
++    '#title' => t('Provide a direct download fallback'),
++    '#description' => t("If a user's browser does not support HTML 5 video or Flash should a link to download the video file be displayed?"),
++    '#default_value' => isset($settings['download_mode']) ? $settings['download_mode'] : FALSE,
++  );
++
+   $form['settings']['width'] = array(
+     '#type' => 'textfield',
+     '#size' => 10,
