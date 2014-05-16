@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="http://dev.viewsation.net/sitemap.xsl"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>http://dev.viewsation.net/</loc>
+<changefreq>daily</changefreq>
+<priority>1.0</priority>
+</url>
+<url><loc>http://dev.viewsation.net/content/slider-thumbnails</loc>
+<lastmod>2014-04-10T04:09Z</lastmod>
+<changefreq>monthly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/bed-image</loc>
+<lastmod>2014-05-01T21:46Z</lastmod>
+<changefreq>weekly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/saucony-sneaker</loc>
+<lastmod>2014-05-02T15:00Z</lastmod>
+<changefreq>weekly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/saucony-video</loc>
+<lastmod>2014-05-02T15:27Z</lastmod>
+<changefreq>weekly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/48-heritage-hill-wyndham-nh</loc>
+<lastmod>2014-05-07T17:56Z</lastmod>
+<changefreq>weekly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/slider-real-estate</loc>
+<lastmod>2014-05-15T19:32Z</lastmod>
+<changefreq>hourly</changefreq>
+</url>
+<url><loc>http://dev.viewsation.net/content/widget-lightbox</loc>
+<lastmod>2014-05-07T19:59Z</lastmod>
+<changefreq>weekly</changefreq>
+</url>
+</urlset>

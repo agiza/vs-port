@@ -1,0 +1,8 @@
+filename = "ViewSationInc.-2014-05-01T13-50-52"
+description = ""
+datestamp = "1398966653"
+generator = "Backup and Migrate (http://drupal.org/project/backup_migrate)"
+generatorversion = "7.x-2.x"
+sites[0][version] = "7.24"
+sites[0][name] = "ViewSation Inc. "
+sites[0][url] = "http://54.204.13.234/"
